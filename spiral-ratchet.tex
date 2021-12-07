@@ -1,0 +1,29 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{multicol}
+\usepackage{siunitx}
+
+\title{Spiral (or Skip) Ratchet \\[1ex] \large A Backwards-Secret Positional Numeral System}
+\author{Brooklyn Zelenka \\ \href{https://fission.codes}{Fission Codes} \\ \href{mailto:brooklyn@fission.codes}{brooklyn@fission.codes} }
+\date{\today}
+
+
+% The preamble ends with the command \begin{document}
+\begin{document} % All begin commands must be paired with an end command somewhere
+    \maketitle % creates title using information in preamble (title, author, date)
+    \begin{multicols}{2}
+    	\begin{abstract}
+    		This a great program for writing math. I can write in line math and other stuff
+    	\end{abstract}
+	    \section{Ratchet}
+	    
+	    
+	    % NOTE TO SELF: count in binary to not leak \emph{any} information\\
+	    
+	    The basic idea for cryptographic ratchets is that repeatedly hashing a value creates a kind of backwards-secret clock. When you start watching the clock, you can generate the hash for any arbitrary future steps, but not steps from prior to observation since that requires computing the SHA3 preimage.
+	    
+	    SHA3-256 is native to the WebCypto API, is a very fast operation, and commonly hardware accelerated. Anecdotally, Firefox on an Apple M1 completes each SHA3 ~3\si{\micro\second} (100k/300\si{\milli\second}). The problem with a single hash counter is threefold:
+	\end{multicols}
+\end{document} % This is the end of the document
