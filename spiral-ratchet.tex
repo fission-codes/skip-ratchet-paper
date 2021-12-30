@@ -49,7 +49,7 @@
    
     Unary is one of the simplest forms of representing numbers. This system is very concrete: the number of symbols is the number being represented. One example is tally marks, but the more computationally interesting are \href{https://en.wikipedia.org/wiki/Peano_axioms#Arithmetic}{Peano numbers}. These numerals are represented by a zero element 0, and successors $S$, such that the number 3 is represented $S(S(S(0)))$. This is very straightforward, but is neither space nor time efficient. 
     
-	Peano numbers may expressed as functions via \href{https://en.wikipedia.org/wiki/Church_encoding}{Church-encoded}. Here, each successor is represented by function application. This model uses the constant identity function $\lambda{f}.\lambda{x}.x$ as ``zero'', and the application of a function to represent each successor, such that 3 is represented as $\lambda{f}.\lambda{x}.f(f(f x))$. Replacing the successor function with a hash function $h$, and an arbitrary initial value $I$ as its zero, one may represent unary counting structurally identically to Peano numbers. In this context, 3 is represented as the hash chain $h(h(h(I)))$.
+	Peano numbers may expressed as functions via \href{https://en.wikipedia.org/wiki/Church_encoding}{Church-encoding}. This model uses the constant identity function $\lambda{f}.\lambda{x}.x$ as ``zero'', and the application of a function to represent each successor, such that 3 is represented as $\lambda{f}.\lambda{x}.f(f(f x))$. Replacing the successor function with a hash function $h$, and an arbitrary initial value $I$ as its zero, one may represent unary counting structurally identically to Peano numbers. In this context, 3 is represented as the hash chain $h(h(h(I)))$.
 	
     To avoid writing a large number of recursive applications by hand, let $h^n(I)$ be \emph{n} recursive applications of $h$ to $I$. By convention, this paper will use $I$, $J$, and $K$ as independent initial values.
     
@@ -140,7 +140,7 @@
 
 	Each digit is given a label and a maximum value for all but the largest, which acts as a linear spine. This treats the largest element as analogous to a unary digit, and the remaining elements are positional, bounded by their numerical base. The unary digit hides information about the range of numbers that the current internal state represents, which is called an ``epoch''.
 	
-	This is roughly analogous to moving along a spiral: one component returns to its initial value, but the other is always moving forward. The motion is predictable and roughly circular, but never crosses itself. Extending the metaphor further: following the spiral in single steps is smooth, but leaps are possible by crossing to adjacent rings.
+	This is roughly analogous to moving along a spiral: one component returns to its initial value, but the other is always moving forward. The motion is predictable and roughly circular, and never crosses itself. Extending the metaphor further: following the spiral in single steps is smooth, but leaps are possible by crossing to adjacent rings.
 	
 	\begin{figure}[h]
 		\centering
@@ -155,6 +155,8 @@
 		\caption{Spiral With Leaps}
 		\label{spiral-metaphor}
 	\end{figure}
+
+	\FloatBarrier
 	
 	\section{Spiral Ratchet}
 	
@@ -166,9 +168,10 @@
 		$\langle \langle Count_{0}, Value_{o} \rangle, \langle Count_{1}, Value_{1} \rangle \ldots \langle Count_{n-1}, Value_{n-1} \rangle, Unary \rangle_{b}$
 		
 		\caption{Spiral Ratchet State}
+		\label{fig:state}
 	\end{figure}
 
-	Note that this is ordered as little-endian. The order of the state does not strictly matter, but it is convenient to associate the index of the state with the exponent for the base that the position represents.
+	Note that Figure \ref{fig:state} is given as little-endian. The order of the state does not strictly matter, but it is convenient to associate the index of the state with the exponent for the base that the position represents.
 	
 	\subsection{Initialization}
 	
@@ -196,7 +199,7 @@
 
 	The number of digits is a balance between granularity and jump control. If the number of digits is large, increment on the unary element or higher digits will have require multiple hash operations in each zero cascade.
 	
-	In practice, a 3-component (a unary spine and two positional digits) SHA3-256 spiral ratchet on base-256 has performed well. The maximum leap is $256^{2}$, which means that one can calculate the state for $i + 256^{3}$ in the same time as $i + 256$.
+	In practice, a 3-component (a unary spine and two positional digits) SHA3-256 spiral ratchet on base-256 has performed well. The maximum leap is $256^{2}$, which means that the calculation of the state $i + 256^{3}$ is approximately the same amount of work as $i + 256$.
 
 	\subsection{Basic Operations}
 	
