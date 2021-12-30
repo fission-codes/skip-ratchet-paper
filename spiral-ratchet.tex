@@ -27,7 +27,7 @@
 
    	\section{Introduction}
    	
-	Hash algorithms provide a way to generate deterministic but random-appearing data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'') for pre-computation resistance, for backwards secrecy, one-time schemes (e.g. \href{https://datatracker.ietf.org/doc/html/rfc1760}{S/KEY}), deterministically generating unique names, key derivation functions (KDFs), and so on. We introduce the ``spiral ratchet'', a hierarchical iterative hashing system capable of efficiently making large leaps, while preserving backwards secrecy.
+	Hash algorithms provide a way to generate deterministic but random-appearing data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'') for pre-computation resistance, for backwards secrecy, one-time schemes (e.g. \href{https://datatracker.ietf.org/doc/html/rfc1760}{S/KEY}), deterministically generating unique names, key derivation functions (KDFs), and so on. This paper introduces the ``spiral ratchet'', a hierarchical iterative hashing system capable of efficiently making large leaps, while preserving backwards secrecy.
 
     \section{Motivation}
     
@@ -35,11 +35,11 @@
     
     Functional persistence is a common strategy in distributed data. The security of history is very important in many applications, including group messaging, collaborative documents, time-series data, and even streams of data with micropayments. It is often impractical to perform a random key rotation for each update. Simple linear ratchets are often used in these situations, such as iteratively applying SHA3-256. More sophisticated ratchet mechanisms can be employed when the participants are fixed to a small group, such as \href{https://signal.org/docs/specifications/doubleratchet/doubleratchet.pdf}{Signal's Double Ratchet}.
     
-    An increasing number of applications have an unstable topology of peers. They require zero-interaction key agreement for arbitrary keys in a sequence, the ability to share a single update (and no others), a range of updates, or history from a point in time onwards. As such, there is a need to keep the historical information of the KDF internal state secret as well.
+    An increasing number of applications have an unstable topology of peers. They require zero-interaction key agreement for arbitrary keys in a sequence, the ability to share a single update (and no others), a range of updates, or history from a point in time onwards. As such, there is a need to keep the historical information of the internal state secret as well.
     
-    One approach for securing history is to use a simple ratchet function, iteratively hashing on each update to produce the next KDF state. This works well if the number of changes to synchronize is small, but $\mathcal{O}(n)$ ratchet generation steps is prohibitive as the difference grows. It allows a malicious participant to force others to perform the same amount of work.
+    One approach for securing history is to use a simple ratchet function, iteratively hashing on each update to produce the next state. This works well if the number of changes to synchronize is small, but $\mathcal{O}(n)$ ratchet generation steps is prohibitive as the difference grows. It allows a malicious participant to force others to perform the same amount of work in order to access the latest update.
     
-    The spiral ratchet adds several properties. It synchronizes in sublinear time, supports efficient arbitrary access, its internal state is backwards secret, and its internal state does not leak metadata such as the number of updates. It is configurable to permit jumps of any size and granularity, and is weakly break-in resistant.
+    The spiral ratchet improves on this situation. It synchronizes in sublinear time, supports efficient arbitrary access, its internal state is backwards secret, and its internal state does not leak metadata such as the number of updates. It is configurable to permit jumps of any size and granularity, and is weakly break-in resistant.
     
     \section{Numeral Intuition}
     
@@ -75,7 +75,7 @@
        	\caption{Compound Hash}
     \end{figure}
     
-    Just as positional numerals combine multiple numbers to represent a single sum, a KDF can have multiple components that are combined to create a single symmetric key. Unlike a positional number system used in arithmetic, a KDF ``forgets'' its internal structure, combining elements and flattening its structure. There are many methods of combination, including further hashing; here we use binary $XOR$.
+    Just as positional numerals combine multiple numbers to represent a single sum, a KDF state can have multiple components that are combined to create a single symmetric key. Unlike a positional number system used in arithmetic, a KDF ``forgets'' its internal structure, combining elements and flattening its structure. There are many methods of combination, including further hashing; here we use binary $XOR$.
     
 	\begin{figure}[h]
 		\begin{flalign}
@@ -365,8 +365,6 @@
 	\subsubsection{Arbitrary Jumps}
 
 	Jumps by an arbitrary interval require a little more calculation (Figure \ref{alg:jump}). The interval is componentized, and increments each digit in turn. Each digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count.
-	
-	Each recursive zeroing is represented with a different value, both between digits and per-digit.
 
 	\begin{algorithm}
 		\caption{Spiral Ratchet Arbitrary Jump}
