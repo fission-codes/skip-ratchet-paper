@@ -63,7 +63,7 @@
      \caption{Componentized Hexadecimal}
     \end{figure}
     
-    By analogy, multiple values can placed in a tuple and iteratively hashed to represent separate digits in a KDF.
+    By analogy, multiple values can placed in a tuple and iteratively hashed to represent digits in a compound structure.
     
     \begin{figure}[h]
        	\begin{flalign}
@@ -72,7 +72,7 @@
        		h_{pos10}(582) & \Rightarrow \langle h^{5}(K), h^{8}(J), h^{2}(I) \rangle \nonumber 
        	\end{flalign}
        	
-       	\caption{Componentized Positional KDF}
+       	\caption{Compound Hash}
     \end{figure}
     
     Just as positional numerals combine multiple numbers to represent a single sum, a KDF can have multiple components that are combined to create a single symmetric key. Unlike a positional number system used in arithmetic, a KDF ``forgets'' its internal structure, combining elements and flattening its structure. There are many methods of combination, including further hashing; here we use binary $XOR$.
@@ -84,12 +84,14 @@
 			h_{pos10, \oplus}(582) & \Rightarrow h^{5}(K) \oplus h^{8}(J) \oplus h^{2}(I) \nonumber 
 		\end{flalign}
 	
-		\caption{OKM for a Positional Ratchet}
+		\caption{Compound Hash Key Derivation}
 	\end{figure}
+    
+	While it is easier to reason about a consistent base, there are cases where the ability to skip by different intervals per level is useful. This paper will only consider the case where the base is consistent across all positional digits.
     
     \section{Bounding}
     
-    Unlike number systems for arithmetic, the spiral ratchet has a fixed number of ``digits'' in its internal state. This limits the jumps to fixed intervals, with a maximum jump interval.  It would be possible to deterministically generate increasingly large digits as needed, but (as we will see later) this would leak data by revealing the range that the count is currently in.
+    Unlike number systems for arithmetic, the spiral ratchet has a fixed number of ``digits'' in its internal state. This limits the jumps to fixed intervals, with a maximum jump interval.  It would be possible to deterministically generate increasingly large digits as needed, but (as we will see later) this would leak data about the range that the count is currently in, which is undesirable (e.g. for securing updatable documents.)
     
     While ratcheting by arbitrary intervals is possible, the jump operation is not the same as adding arbitrary integers. Incrementing all but the lowest digit cascades down to the lower values, in effect ``zeroing'' them out. Arbitrary jumps require a carry (Algorithm \ref{alg:jump}). This is structurally similar to \href{https://en.wikipedia.org/wiki/Skip_list}{skip lists} (Figure \ref{fig:skip-list}), but with each step pointing to a monotonically increasing value, rather than previous values. \\
  
@@ -116,28 +118,43 @@
 		\centering
 		
 		$\xymatrix{
-		    \left[ { \begin{array}{cc} L \\ M  \\ S \end{array} } \right]
+		    \underset{000_{2}}{\left[ { \begin{array}{cc} L \\ M  \\ S \end{array} } \right]}
 				\ar[r]^{+1}
 				\ar@/_3pc/[rr]_{skip_{M}}
 				\ar@/^7pc/[rrrr]^{skip_{L}}
-    	 & \left[ { \begin{array}{cc} L \\ M  \\ h(S) \end{array} } \right]
+    	 & \underset{001_{2}}{\left[ { \begin{array}{cc} L \\ M  \\ h(S) \end{array} } \right]}
 	      		\ar[r]^{+1}
 	      		\ar@/^4.75pc/[rrr]^{skip_{L}}
-	     & \left[ { \begin{array}{cc} L \\ h(M)  \\ S' \end{array} } \right]
+	     & \underset{010_{2}}{\left[ { \begin{array}{cc} L \\ h(M)  \\ S' \end{array} } \right]}
 	      		\ar[r]^{+1}
 	      		\ar@/_3pc/[rr]_{skip_{M}}
 	      		\ar@/^3pc/[rr]^{skip_{L}}
-    	 & \left[ { \begin{array}{cc} L \\ h(M)  \\ h(S') \end{array} } \right]
+    	 & \underset{011_{2}}{\left[ { \begin{array}{cc} L \\ h(M)  \\ h(S') \end{array} } \right]}
 	      		\ar[r]^{+1}
-	     & \left[ { \begin{array}{cc} h(L) \\ M'  \\ S'' \end{array} } \right]
+	     & \underset{100_{2}}{\left[ { \begin{array}{cc} h(L) \\ M'  \\ S'' \end{array} } \right]}
 		}$
 
-		\caption{Simplified Multipart Ratchet}
+		\caption{Simplified Compound Ratchet}
+		\label{fig:compound-ratchet}
 	\end{figure}
 
-	Each digit is given a label and a maximum value for all but the largest, which acts as a spine. This treats the largest element as analogous to a unary digit, and the remaining elements are bounded by their numerical base. The unary digit hides information about the range of numbers that the current internal state represents, which is called an ``epoch''.
+	Each digit is given a label and a maximum value for all but the largest, which acts as a linear spine. This treats the largest element as analogous to a unary digit, and the remaining elements are positional, bounded by their numerical base. The unary digit hides information about the range of numbers that the current internal state represents, which is called an ``epoch''.
 	
-	While it is easier to reason about a consistent base, there are cases where the varied skip intervals per level is useful. This paper will only consider the case where the base is consistent across all positional digits.
+	This is roughly analogous to moving along a spiral: one component returns to its initial value, but the other is always moving forward. The motion is predictable and roughly circular, but never crosses itself. Extending the metaphor further: following the spiral in single steps is smooth, but leaps are possible by crossing to adjacent rings.
+	
+	\begin{figure}[h]
+		\centering
+		
+		\begin{tikzpicture}
+			\draw [->, domain=0:29, variable=\t, smooth, samples=100]
+			plot ({\t r}: {0.0015 * \t * \t});
+			\draw [->] (0, 0.3) -- (0, 0.6);
+			\draw [->, style=densely dotted, rotate=-30] (-0.15, 0.250) arc (0:60:21pt);
+		\end{tikzpicture}
+		
+		\caption{Spiral With Leaps}
+		\label{spiral-metaphor}
+	\end{figure}
 	
 	\section{Spiral Ratchet}
 	
@@ -223,6 +240,8 @@
 
 	Being a ratchet, it can never be ``unwound'' (there is no inverse or subtractive analogue). Access to earlier keys requires knowing an even earlier state, and moving forwards to the desired state from there. This is important for break-in resistance and backwards secrecy (e.g sharing a document from a point in time but no earlier).
 
+	\subsubsection{Key Derivation}
+
 	Generating output key material (OKM) from the ratchet state can be done in a myriad of ways. This paper will use the bitwise XOR function, as it is straightforward and efficient.
 
 	\begin{algorithm}
@@ -239,8 +258,12 @@
 			\EndFunction
 		\end{algorithmic}
 	\end{algorithm}
+
+	\FloatBarrier
 	
-	Just like positional numerals, when a digit reaches its maximum, the next larger digit is incremented, and all lower digits are zeroed out. The zero cascade works similarly for spiral ratchets, but never repeats a value (i.e. the \hyperref[{spiral-property}]{spiral property}). Exactly like the initialization, each zero is derived from the preimage of the higher digit (Figure \ref{fig:zero-cascade}).
+	\subsubsection{Incrementing}
+	
+	Just like positional numerals, when a digit reaches its maximum, the next larger digit is incremented, and all lower digits are zeroed out. The zero cascade works similarly for spiral ratchets, but never repeats a value (i.e. the \hyperref[{spiral-metaphor}]{spiral property}). Exactly like the initialization, each zero is derived from the preimage of the higher digit (Figure \ref{fig:zero-cascade}).
 	
 	\begin{figure}[h]
 		\centering
@@ -336,7 +359,11 @@
 		\end{algorithmic}
 	\end{algorithm}
 
+	\subsubsection{Arbitrary Jumps}
+
 	Jumps by an arbitrary interval require a little more calculation (Figure \ref{alg:jump}). The interval is componentized, and increments each digit in turn. Each digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count.
+	
+	Each recursive zeroing is represented with a different value, both between digits and per-digit.
 
 	\begin{algorithm}
 		\caption{Spiral Ratchet Arbitrary Jump}
@@ -390,38 +417,20 @@
 			\EndFunction
 		\end{algorithmic}
 	\end{algorithm}
-    
-	\section{Security Considerations}
 
-	\subsection{Spiral Property}
-	
-	The spiral ratchet does not make for a compelling basis for arithmetic.
-	
-	The each recursive zeroing is represented with a different value, both between digits and per-digit. This is roughly analogous to moving in a spiral, where one component returns to its initial value, but the other is always moving outwards. In short: a spiral is predictable, but never crosses itself.
-	
-	\label{spiral-property}
-	
-	\begin{figure}[h]
-		\centering
-		
-		\begin{tikzpicture}
-			\draw [domain=0:30, variable=\t, smooth, samples=100]
-			plot ({\t r}: {0.0015 * \t * \t});
-		\end{tikzpicture}
-		
-		\caption{A Spiral Never Crosses Itself}
-	\end{figure}
+	\section{Security Considerations}
     
+    \newpage
     
     \section{Acknowledgements}
     
-    The spiral ratchet algorithm was developed at \href{https://fission.codes}{Fission Codes} to support work on the \href{https://github.com/fission-suite/webnative}{Webnative File System (WNFS)}. Many thanks to the Fission Codes team for providing space to do this work.
+    The spiral ratchet algorithm was developed at \href{https://fission.codes}{Fission Codes} to support work on the \href{https://github.com/fission-suite/webnative}{Webnative File System (WNFS)}. Many thanks to the Fission Codes team for providing the freedom to do this work.
     
-    Thanks to \href{https://github.com/matheus23/}{Philipp Krüger} at Fission Codes for  feedback on the design, for doing the bulk of the \href{https://github.com/fission-suite/webnative/blob/e1eed4e750c668a6f54d9be701dc17e286b9eff4/src/fs/data/private/spiralratchet.ts}{TypeScript implementation}, and for his patience as various parts of the algorithm were tweaked.
+    Thanks to \href{https://github.com/matheus23/}{Philipp Krüger} at Fission Codes for  feedback on the design, for writing the bulk of the \href{https://github.com/fission-suite/webnative/blob/e1eed4e750c668a6f54d9be701dc17e286b9eff4/src/fs/data/private/spiralratchet.ts}{TypeScript implementation}, and for his patience as various parts of the algorithm were tweaked.
     
-    Thanks to \href{https://github.com/b5/}{Brendan O'Brien} at \href{https://qri.io/}{Qri} for the \href{https://github.com/qri-io/wnfs-go/commit/62915924c866f7106aecacccd14e57bd1b62850f}{Go implementation}, and for many discussions on the best way to explain the concept.
+    Thanks to \href{https://github.com/b5/}{Brendan O'Brien} at \href{https://qri.io/}{Qri} for the \href{https://github.com/qri-io/wnfs-go/blob/62915924c866f7106aecacccd14e57bd1b62850f/private/ratchet/ratchet.go}{Go implementation}, and for many discussions on the best way to explain the concept.
     
-    Thanks to and \href{https://github.com/dholms}{Daniel Holmgren} at \textbf{NOT YET PUBLIC} for his feedback on early versions of this algorithm.
+    Thanks to \href{https://github.com/dholms}{Daniel Holmgren} at \textbf{NOT YET PUBLIC} for his feedback on early versions of this algorithm.
     
     Thanks to \href{https://github.com/jbenet/}{Juan Benet} at \href{https://protocol.ai/}{Protocol Labs} for encouraging me to write a more full-fledged description of the spiral ratchet than what was available in the Fission Codes online documentation.
     
