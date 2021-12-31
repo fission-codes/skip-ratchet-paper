@@ -370,7 +370,7 @@
 
 	\subsubsection{Arbitrary Jumps}
 
-	Jumps by an arbitrary interval require a little more calculation (Algorithm \ref{alg:jump}). The interval $\delta$ is componentized, and each digit incremented in ascending order. Every positional digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count. Arbitrary jumps run in $\mathcal{O}(\log_{b} \delta)$ when $\delta < b^{bn}$ (the normal operating interval that the ratchet is tuned for). As the unary hash chain dominates as $\delta$ becomes very large, the complexity changes to $\mathcal{O}(\frac{\delta}{bn})$. % FIXME double check the math!
+	Jumps by an arbitrary interval require a little more calculation (Algorithm \ref{alg:jump}). The interval $\delta$ is componentized, and each digit incremented in ascending order. Every positional digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count. Arbitrary jumps run in $\mathcal{O}(\log_{b} \delta)$ when $\delta < b^{bn}$ (the normal operating interval that the ratchet is tuned for). As the unary hash chain dominates as $\delta$ becomes very large, the complexity changes to $\mathcal{O}(\frac{\delta}{b^{n}})$. % FIXME double check the math!
 
 	\begin{algorithm}
 		\caption{Spiral Ratchet Arbitrary Jump}
