@@ -28,6 +28,7 @@
 
 @online {
   double-ratchet,
+  title        = {The Double Ratchet Algorithm},
   author       = {Trevor Perrin and Moxie Marlinspike},
   organization = {Signal Foundation},
   version      = {Revision 1, 2016-11-20},
@@ -68,8 +69,7 @@
   title        = {The S/KEY One-Time Password System},
   pagetotal    = 12,
   year         = 1995,
-  month        = 2,
-  abstract     = {This document describes the S/KEY* One-Time Password system as released for public use by Bellcore. This memo provides information for the Internet community. This memo does not specify an Internet standard of any kind.}
+  month        = 2
 }
 
 @inbook{
@@ -77,7 +77,7 @@
   title     = {Deterministic Skip Lists},
   booktitle = {Proceedings of the third annual ACM-SIAM symposium on Discrete algorithms},
   publisher = {Society for Industrial and Applied Mathematics},
-  author    = {J. Ian Munro, Thomas Papadakis, and Robert Sedgewick},
+  author    = {J. Ian Munro and Thomas Papadakis and Robert Sedgewick},
   url       = {https://www.ic.unicamp.br/~celio/peer2peer/skip-net-graph/deterministic-skip-lists-munro.pdf},
   year      = {1992},
   pages     = {367–375},
@@ -87,10 +87,55 @@
 @misc{
   skipnet,
   title        = {SkipNet: A Scalable Overlay Network with Practical Locality Properties},
-  author       = {Nicholas J.A. Harvey et al},
+  author       = {Nicholas J.A. Harvey et al.},
   series       = {Microsoft Research Techincal Report},
   number       = {MSR-TR-2002-92},
   year         = {2002},
   url          = {https://www.ic.unicamp.br/~celio/peer2peer/skip-net-graph/skipnet-tr-2002-92.pdf},
   addendum     = "(accessed: 2021-12-26)"
+}
+
+@online{
+  double-ratchet-modularization,
+  title        = {The Double Ratchet: Security Notions, Proofs, and
+  Modularization for the Signal Protocol},
+  author       = {Joël Alwen and Sandro Coretti and Yevgeniy Dodis},
+  year         = {2020},
+  month        = {2},
+  url          = {https://eprint.iacr.org/2018/1037.pdf}
+}
+
+@online{
+  ethereum-yellowpaper,
+  title        = {Ethereum: A Secure Decentralized Generalized Transaction Ledger},
+  version      = {Berlin (fabef25)},
+  author       = {Gavin Wood},
+  organization = {Ethereum Foundation},
+  year         = {2021},
+  month        = {12},
+  url          = {https://ethereum.github.io/yellowpaper/paper.pdf},
+  addendum     = "(accessed: 2022-01-03)"
+}
+
+@online{
+  distributed-hash-calendar,
+  title        = {Keyless Signatures’ Infrastructure:	How to Build Global Distributed Hash-Trees},
+  author       = {Ahto Buldas and Andres Kroonmaa and Risto Laanoja},
+  publisher    = {GuardTime AS},
+  url          = {https://guardtime.com/files/BuKL13.pdf},
+  addendum     = "(accessed: 2022-01-03)"
+}
+
+@inproceedings{
+	merkle-tree,
+	author = {Merkle, Ralph C.},
+	title = {A Digital Signature Based on a Conventional Encryption Function},
+	year = {1987},
+	isbn = {3540187960},
+	publisher = {Springer-Verlag},
+	address = {Berlin, Heidelberg},
+	booktitle = {A Conference on the Theory and Applications of Cryptographic Techniques on Advances in Cryptology},
+	pages = {369–378},
+	numpages = {10},
+	series = {CRYPTO '87}
 }
