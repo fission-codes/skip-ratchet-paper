@@ -1,1 +1,1 @@
-# spiral-ratchet-paper
+# skip-ratchet-paper
