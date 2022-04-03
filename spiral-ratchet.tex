@@ -17,6 +17,7 @@
 \usepackage{siunitx}
 \usepackage{subcaption}
 \usepackage{tikz}
+\usepackage{url}
 \usepackage{xypic}
 
 \title{Skip Ratchet \\[1ex] \large A Recursive Hash System}
@@ -34,22 +35,22 @@
     \maketitle
     
    	\begin{abstract}\
-   		Hash chains are a simple way to deterministically generate key material, but they are inefficient in many situations, such as synchronizing the heads of a forward secret stream. This paper presents the Skip Ratchet, a novel symmetric key derivation function that can be efficiently incremented by arbitrary intervals.
+   		Hash chains are a simple way to generate pseudorandom key material. However, they are inefficient in many situations, including when used as logical clocks, or for synchronizing the heads of a forward secret stream. This paper presents the ``skip ratchet'', a novel symmetric key derivation function that can be efficiently incremented by arbitrary intervals.
    	\end{abstract}
 
    	\section{Introduction}
    	
-	Hash algorithms provide a way to generate deterministic but random-appearing data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting''\cite{pond}) for pre-computation resistance, forward secrecy (FS), one-time schemes (e.g. S/KEY\cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), and so on. This paper introduces the Skip Ratchet (SR), a hierarchical and iterative hashing system capable of efficiently making large leaps in hash count, while preserving forward secrecy in a passive setting.
+	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, forward secrecy (FS), one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), and so on. This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system capable of efficiently making large leaps in hash count, while preserving forward secrecy in a passive setting.
 
     \section{Motivation}
     
-    The intersection of private data and location-independent access control in open distributed systems is only beginning to be explored. Trust minimized protocols are increasingly important, but admit to many unsolved problems, including how to secure changing data in an unknown and unstable topology. The lack of knowledge of any information about the peers implies the use of passive security methods based directly on data.
+    The intersection of private data and location-independent access control in open distributed systems is only beginning to be explored. Trust minimized protocols are increasingly important, but admit to many unsolved problems, including how to secure changing data in an unknown and unstable topology. Not knowing the number or attributes of peers implies the use of passive security methods based directly on data.
     
-    An increasing number of applications in open networks have no fixed topology of peers, and need to work in presence of a high latency ratio or network partitions. They require zero-interaction key agreement on many items, the ability to share a single item (and no others), a range of items, or elements from a point onwards. As such, there is also a need to keep the historical information of the internal state secret.
+    An increasing number of applications in open networks have no fixed topology, and need to work in presence of high latency or network partitions. They require zero-interaction key agreement on many items, the ability to share a single item (and no others), a range of items, or elements from a point onwards. As such, there is also a need to keep the historical information of the internal state secret.
     
-    One approach for securing history is to use a simple ratchet function, iteratively hashing on each update to produce the next state. This works well if the number of changes to synchronize is small, but $\mathcal{O}(n)$ ratchet generation steps is prohibitive as the difference grows. It allows a malicious participant to force others to perform the same amount of work in order to access the latest update.
+    One approach for securing history is to use a simple ratchet function, iteratively hashing on each update to produce the next state (a "hash chain"). This works well if the number of changes to synchronize is small, but $\mathcal{O}(n)$ ratchet steps is prohibitive as the difference grows. It allows a malicious participant to force others to a large amount of work in order to access the latest update.
     
-    The Skip Ratchet improves on this situation. It is able to synchronize in sublinear time, supports efficient arbitrary access in the forward direction, its internal state is backwards secret, and does not leak metadata such as the number of updates or participants to anyone. It is configurable to permit jumps of any size and granularity.
+    The skip ratchet presented here improves the situation. A skip ratchet is able to synchronize in sublinear time, supports efficient arbitrary access in the forward direction, maintains backwards secrecy of its internal state, and does not leak metadata such as the number of updates or participants. Further, jump size and granularity is configurable.
     
     \section{Numeral Intuition}
     
@@ -57,11 +58,13 @@
     
 	\subsection{Unary Hashing}
 
-	Unary is one of the simplest forms of expressing numbers. This system is very concrete: the number of symbols is the number being represented. One example is tally marks, but the more computationally interesting are Peano number\cite{peano-wikipedia}. These numerals are represented by a zero element 0, and successors $S$ (Figure \ref{fig:peano-hash-equiv}). This is a very straightforward method, but is neither space nor time efficient.
-
-	Peano numbers may expressed as functions via Church-encoding\cite{tapl-church-numerals}. This model uses the constant identity function $\lambda{f}.\lambda{x}.x$ as ``zero'', and the application of a function to represent each successor, such that 3 is represented as $\lambda{f}.\lambda{x}.f(f(f x))$. Replacing the successor function with a hash function $h$, and an arbitrary initial value $I$ as its zero, one may represent unary counting structurally identically to Peano numbers. In this context, 3 is represented as the hash chain $h(h(h(I)))$ (Figure \ref{fig:peano-hash-equiv}).
+	Unary is one of the simplest forms of expressing numbers. This system is very concrete: the number of symbols is equivalent to the number being represented. Two examples are tally marks and Peano numbers \cite{peano-wikipedia}.
 	
-	To avoid writing a large number of recursive applications by hand, let $h^n(I)$ be \emph{n} recursive applications of $h$ to $I$. By convention, this paper will use $I$, $J$, and $K$ as independent initial values.
+	Replacing the successor function with a hash function $h$, one may represent unary counting in a structurally equivalent manner to Peano numbers. Importantly, this does not make reference to a concrete "zero" value; merely an interval from the input $x$. It is common to denote $n$ applications of a hash $h$ as $h^n(x)$. By convention, this paper will use $x$, $y$, and $z$ as independent initial values.
+	
+	While this method is very straightforward, it is neither space nor time efficient.
+	
+	TODO : similar to \cite{DBLP:journals/corr/abs-cs-0503060}
 	
     \begin{figure}[h]
 		\centering
@@ -77,7 +80,7 @@
     
     \subsection{Positional Hashing}
     
-    A major advantage of positionality is the ability to express large jumps with minimal effort. In positional systems, such as the familiar binary, decimal, and hexadecimal, each position corresponds to some factor for the numeral at that position. While most systems have factors that are some exponent of a fixed base, there are many systems where there are no simple relationship between factors.
+    A major advantage of positional numerals is the ability to express large jumps with minimal effort. In positional systems (such as the familiar binary, decimal, and hexadecimal) each position corresponds to some factor for the numeral at that position.\footnote{While most systems use exponential factors of a fixed base, there exist systems where there are no simple relationship between factors.}
     
     \begin{figure}[h]
        	\centering
@@ -85,13 +88,13 @@
      \caption{Componentized Hexadecimal}
     \end{figure}
     
-    By analogy, multiple values can placed in a tuple and iteratively hashed to represent digits in a compound structure. Just as positional numerals combine multiple numbers to represent a single sum, a KDF state can have multiple components that are combined to create a single symmetric key.
+    Just as positional numerals combine multiple numbers to represent a single sum, a KDF state can have multiple components that are combined to create a single symmetric key.
     
     \begin{figure}[h]
        	\begin{flalign}
-       		h_{pos10}(0)   & \Rightarrow I \nonumber \\
-       		h_{pos10}(11)  & \Rightarrow (h(J), h(I)) \nonumber \\
-       		h_{pos10}(582) & \Rightarrow (h^{5}(K), h^{8}(J), h^{2}(I)) \nonumber 
+       		h_{10}(i+0)   & \Rightarrow x \nonumber \\
+       		h_{10}(i+11)  & \Rightarrow \langle h(y), h(x) \rangle \nonumber \\
+       		h_{10}(i+582) & \Rightarrow \langle h^{5}(z), h^{8}(y), h^{2}(x) \rangle \nonumber 
        	\end{flalign}
        	
        	\caption{Compound Hash}
@@ -102,22 +105,20 @@
     
 	\begin{figure}[h]
 		\begin{flalign}
-			h_{pos10, \oplus}(0)   & \Rightarrow I \nonumber \\
-			h_{pos10, \oplus}(11)  & \Rightarrow h(J) \oplus h(I) \nonumber \\
-			h_{pos10, \oplus}(582) & \Rightarrow h^{5}(K) \oplus h^{8}(J) \oplus h^{2}(I) \nonumber 
+			h_{pos10, \oplus}(0)   & \Rightarrow x \nonumber \\
+			h_{pos10, \oplus}(11)  & \Rightarrow h(y) \oplus h(x) \nonumber \\
+			h_{pos10, \oplus}(582) & \Rightarrow h^{5}(z) \oplus h^{8}(y) \oplus h^{2}(x) \nonumber 
 		\end{flalign}
 	
 		\caption{Compound Hash Key Derivation}
 		\label{fig:compound-kdf}
 	\end{figure}
     
-	While it is easier to reason about a consistent base, there are cases where the ability to skip by different intervals per level is useful. This paper will only consider consistent bases across all positional digits.
-    
     \section{Bounding}
     
-    Unlike number systems for arithmetic, the Skip Ratchet has a fixed number of ``digits'' in its internal state. This limits the jumps to fixed intervals, with a maximum jump interval. It is possible to create variants that deterministically generate increasingly large digits as needed, but this would leak data about the range that the count is currently in. This indistinguishability property is desirable in many use cases, such as for securing updatable documents on an public network.
+    Unlike numeral systems useful for arithmetic, the skip ratchet's internal state is composed of a fixed number of ``digits''. This limits the jumps to fixed intervals, with a maximum jump interval. While it is possible to create variants that deterministically generate increasingly large digits as needed, but this would leak data about the range of the counter. Being computationally indistinguishable is desirable in many use cases, such as for securing updatable documents in an public network.
     
-    While advancing the ratchet by arbitrary intervals is possible, the jump operation is not the same as adding arbitrary integers. Incrementing all but the lowest digit cascades down to the lower values, in effect ``zeroing'' them, and therefore arbitrary jumps require a carry (Algorithm \ref{alg:jump}). This is structurally similar to deterministic skip lists\cite{deterministic-skip-lists} (Figure \ref{fig:skip-list}), but with each step pointing to a monotonically increasing value, rather than previous ones.\footnote{While the analogy to fingered DAGs such as skip lists in the name is apt, the SR is distinct from other DAG-structured hash constructions like the Merkle Tree\cite{merkle-tree} or Hash Calendar\cite{distributed-hash-calendar}. A Skip Ratchet does not aggregate digests into a signature, but rather counts by iteratively hashing the same value repeatedly, in tiers.} \\
+    While advancing the ratchet by arbitrary intervals is possible, the jump operation is not the same as adding arbitrary integers. Incrementing all but the lowest digit cascades down to the lower values, ``zeroing'' them out. Therefore, arbitrary jumps require a carry (Algorithm \ref{alg:jump}). This is structurally similar to deterministic skip lists \cite{deterministic-skip-lists} (Figure \ref{fig:skip-list}), but with each step pointing to a monotonically increasing value, rather than previous ones.\footnote{While the analogy to fingered DAGs such as skip lists in the name is apt, the skip ratchet is distinct from other DAG-structured hash constructions like the Merkle Tree \cite{merkle-tree} or Hash Calendar \cite{distributed-hash-calendar}. A skip ratchet does not aggregate digests into a signature, but rather counts by iteratively hashing the same value repeatedly, in tiers.} \\
  
 	\begin{figure}[h]
 		\centering
@@ -134,7 +135,7 @@
 			& H \ar[l] , \ar@/^1pc/[ll] , \ar@/_2pc/[llll]
 		}$
 	
-		\caption{Skip List}
+		\caption{Deterministic Skip List}
 		\label{fig:skip-list}
 	\end{figure}
 
@@ -162,9 +163,9 @@
 		\label{fig:compound-ratchet}
 	\end{figure}
 
-	Each digit is given a label and maximum value for all but the largest, which acts as a linear spine. This largest element is analogous to a an unbounded unary digit, and the remaining elements are positional and bounded by their numerical base. The unary digit hides information about the range of numbers that the current internal state represents. Any range within a fixed larger value is called an ``epoch'' (e.g. ``the 300s epoch'' or ``the $h^{42}(J)$ epoch'').\footnote{The term ``epoch'' is used here in the generic or Ethereum\cite{ethereum-yellowpaper} sense, and is a slightly different from some other ratchet constructions such as the Double Ratchet\cite{double-ratchet-modularization}.}
+	Each digit is given a label and maximum value for all but the largest, which acts as a linear ``spine''. This largest element is analogous to an unbounded unary digit. The remaining elements are arranged positionally, and are bounded by their numerical base. Since the unary digit is a hard limit on the number of digits, it conceals information about the range of numbers that the current internal state represents. Any range within a fixed larger value is called an ``epoch'' (e.g. ``the 300s epoch'' or ``the $h^{42}(x)$ epoch'').\footnote{The term ``epoch'' is used here in the generic or Ethereum\cite{ethereum-yellowpaper} sense, and is a slightly different from some other ratchet constructions such as the Double Ratchet\cite{double-ratchet-modularization}.}
 	
-	This is roughly analogous to moving along a spiral: one component returns to its initial value, but the other is always moving forward. The motion is predictable and roughly circular, but extends outwards rather than crossing itself. Extending the metaphor further: following the spiral in single steps is smooth, but leaps are possible by jumping to adjacent rings (Figure \ref{fig:spiral-metaphor}). Unlike the repeating numerals found in most counting systems, the Skip Ratchet never repeats a value despite the counter being kept to a limited number of elements. We call this the ``spiral property.''.
+	By geometric analogy, the possible steps in this construction are similar to moving along a spiral: one component returns to its initial value, but the other dimension is always moving forward. Following a spiral in single steps is smooth, but leaps are possible by jumping to adjacent rings (Figure \ref{fig:spiral-metaphor}). Unlike the repeating numerals found in most counting systems, the skip ratchet never repeats a value despite the counter being kept to a limited number of elements. We call this the ``spiral property.''.
 	
 	\begin{figure}[h]
 		\centering
@@ -184,12 +185,14 @@
 	
 	\section{Skip Ratchet}
 	
+	\subsection{Internal State}
+	
 	The Spiral Ratchet's state is built from a unary digit $U$, a fixed number $n$ of positional digits, and their base $b$. The positional digits are bounded by the base, and so must track a natural number count. The unary digit explicitly does not track its count.
 	
 	\begin{figure}[h]
 		\centering
 		
-		$S : ((Count_{0}, Value_{0}), (Count_{1}, Value_{1}) \ldots (Count_{n-1}, Value_{n-1}), U)_{b}$
+		$S : \langle \langle Count_{0}, Value_{0} \rangle, \langle Count_{1}, Value_{1} \rangle \ldots \langle Count_{n-1}, Value_{n-1} \rangle, U\rangle_{b}$
 		
 		\caption{Skip Ratchet State}
 		\label{fig:state}
@@ -199,12 +202,12 @@
 	
 	\subsection{Initialization}
 	
-	A Skip Ratchet is deterministically derived from a hash function $h$, a numeric base $b$, a positional digit count $n$, and an initialization vector $IV$, generating a \emph{seed state}. We distinguish between configurations by referring to their $(n, b, h)$ triple, such as $(3, 256, \textsf{SHA}3)$ Skip Ratchet.
+	A skip ratchet is deterministically derived from a hash function $h$, a numeric base $b$, a positional digit count $n$, a function $k$ to derive a key the state, and an initialization vector $IV$. We distinguish between configurations by referring to their $(n, b, h, k)$ triple, such as $(3, 256, \textsf{SHA}3, \oplus)$ skip ratchet.
 
 	\begin{figure}[h]
 		\centering
 	
-		$(n, b, h, IV) \rightarrow S$
+		$\langle \langle n, b, h, k \rangle, IV \rangle \rightarrow S$
 	
 		\caption{Seed Generation}
 		\label{fig:config}
@@ -212,12 +215,12 @@
 	
 	To prevent leaking the iteration count, all of the positional values in the seed state are immediately incremented by a random value. This randomized origin is treated as the ratchet's starting state. Given the backward secrecy constraint, only relative values may be used unless this initial value is known.
 	
-	Each positional value is generated from the \emph{binary complement of the preimage} of its larger neighbour, in a recursive cascade starting with the unary digit (Algorithm \ref{alg:setup}). This protects the information needed to derive the current state, and thus prevents leaking all of the values in that range.
+	Each positional value is generated from the \emph{binary complement ($\sim$) of the preimage} of its larger neighbour, in a recursive cascade starting with the unary digit (Algorithm \ref{alg:setup}). This protects the information needed to derive the current state, and thus prevents leaking all of the values in that range.
 		
 	\begin{algorithm}
 		\begin{algorithmic}[1]
-			\Require $(n, b, \lambda) \in \mathbb{N}_{1}\times{\mathbb{N}_{1}\times{\mathbb{N}_{1}}}$
-			\State $seed \overset{\$}{\gets} \lbrace 0, 1 \rbrace^{\lambda}$
+			\Require $\langle n, b, k \rangle \in \mathbb{N}_{1}\times{\mathbb{N}_{1}\times{\mathbb{N}_{1}}}$
+			\State $seed \overset{\$}{\gets} \lbrace 0, 1 \rbrace^{k}$
 			\State $pos   \coloneqq []$
 			\State $unary \coloneqq hash(seed)$
 			\For{$i \gets (n - 1) \ldots 0$} \Comment{Descending to associate index with degree}
@@ -234,13 +237,13 @@
 		\label{alg:setup}
 	\end{algorithm}
 
-	The number of digits is a balance between granularity and jump control. If the number of digits is large, increment on the unary element or higher digits will have require multiple hash operations in each zero cascade (Figure \ref{fig:zero-cascade}).
+	The number of digits is configurable. These should be chosen to a balance jump control (the number of intervals that can be skipped by), and step-function performance. If the number of digits is large, increment on the unary element or higher digits will have require multiple hash operations in each zero cascade.
 	
-	In practice, a 3-degree\footnote{Unary spine and two positional digits} base-256 SHA3 Skip Ratchet has performed well. The maximum leap is $256^{2}$, so the state $i + 256^{3}$ is (approximately) the same amount of work as $i + 256$. Given the small constant factor of hardware-accelerated hashing and the monotonicity of a ratchet, relatively large bases are often viable.
+	In practice, $(3, 256, \textsf{SHA}3, \oplus)$ and $(3, 256, \textsf{BLAKE}3, \oplus)$ skip ratchets have performed well. The maximum leap is $256^{2}$, so the state $i + 256^{3}$ is (approximately) the same amount of work as $i + 256$. Given the small constant factor of hardware-accelerated hashing and the monotonicity of a ratchet, relatively large bases are often viable.
 
 	\subsection{Basic Operations}
 	
-	Basic operations on the Skip Ratchet follow from the rules set out during initialization. It can be incremented sequentially, or leap to the next ``zero'' of any digit. Any interval can be efficiently found by combining increments and skips (Figure \ref{fig:sr-ops}).
+	Basic operations on the skip ratchet follow from the rules set out during initialization. It can be incremented sequentially, or leap to the next ``zero'' of any digit. Any interval can be efficiently found by combining increments and skips (Figure \ref{fig:sr-ops}).
 	
 	It is sometimes helpful to distinguish between a small and large skip, and so the terms ``skip'' and ``leap'' may be used for this purpose, despite them functioning identically but on different positions. The term ``increment'' (or ``inc'') is only used for the special case of the smallest movement (by one).
 	
@@ -306,64 +309,9 @@
 	
 	\subsubsection{Incrementing}
 	
-	As with positional numerals, when a digit reaches its maximum, the next larger digit is incremented, and all lower digits are zeroed out. The zero cascade works similarly for Skip Ratchets, but never repeats a value (i.e. the \hyperref[{spiral-metaphor}]{spiral property}). Exactly like the initialization, each zero is derived from the preimage of the higher digit (Figure \ref{fig:zero-cascade}).
+	As with positional numerals, when a digit reaches its maximum, the next larger digit is incremented, and all lower digits are zeroed out. The zero cascade works similarly for skip ratchets, but never repeats a value (i.e. the \hyperref[{spiral-metaphor}]{spiral property}). As during initialization, the initialization, each zero is derived from the preimage of the higher digit.
 	
-	\begin{figure}[h]
-		\centering
-		
-		$\xymatrix{
-		  h^{i-1}(U)
-					\ar[r]^{h}
-					\ar[dr]^{h \circ \sim}
-				& h^{i}(U)
-					\ar[rrrr]^{h}
-					\ar[drrrr]^{h \circ \sim}
-				&
-				&
-				&
-				& h^{i + 1}(U)
-					\ar[r]^{h}
-				& \cdots
-			\\    h(J_{-1})
-					\ar[dr]^{h \circ \sim}
-				& J_{0}
-					\ar[rr]^{h}
-					\ar[drr]^{h \circ \sim}
-				&
-				& h(J_{0})
-					\ar[drr]^{h \circ \sim}
-				&
-				& J_{1}
-					\ar[r]^{h}
-				& \cdots
-			\\  
-				& I_{0}
-					\ar[r]^{h}
-				& h(I_{0})
-				& I_{1}
-					\ar[r]^{h}
-				& h(I_{1})
-				& I_{2}
-					\ar[r]^{h}
-				& \cdots
-			\save
-			"2,2" . "3,2" *[F.] \frm{}
-			\restore
-			\save
-			"3,4" . "3,4" *[F.] \frm{}
-			\restore
-			\save
-			"2,6" . "3,6" *[F.] \frm{}
-			\restore
-		}$
-		
-		\caption{Zero Cascade for a Binary Skip Ratchet}
-		\label{fig:zero-cascade}
-	\end{figure}
-	
-	\FloatBarrier
-	
-	The special case of incrementing by one is the simplest way to demonstrate this (Algorithm \ref{alg:inc}). It functions by checking the lowest digit's counter, and if it's saturated, mark a carry and move to the next digit and recurse, bounded by the unary digit. Any carried digits are then re-zeroed by the preimage of their larger neighbour.
+	The special case of incrementing by one is the simplest way to demonstrate this (Algorxithm \ref{alg:inc}). It functions by checking the lowest digit's counter, and if it's saturated, mark a carry and move to the next digit and recurse, bounded by the unary digit. Any carried digits are then re-zeroed by the preimage of their larger neighbour.
 	
 	\begin{algorithm}
 		\caption{Incrementing a Skip Ratchet}
@@ -386,7 +334,7 @@
 				\EndFor
 				\\
 				\If{$counter\overset{?}{=} length(pos)$} \Comment{All positional values were saturated}
-					\State $ratchet[unary] \coloneqq hash(unary)$
+					\State $ratchet.unary \coloneqq hash(unary)$
 				\EndIf
 				\\
 				\If{$counter \overset{?}{>} 0$}
@@ -405,7 +353,7 @@
 
 	\subsubsection{Arbitrary Jumps}
 
-	Jumps by an arbitrary interval require a little more calculation (Algorithm \ref{alg:jump}). The interval $\delta$ is componentized, and each digit incremented in ascending order. Every positional digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count. Arbitrary jumps run in $\mathcal{O}(\log_{b} \delta)$ when $\delta < b^{b(n+1)}$ (the normal operating interval that the SR is tuned for). As the unary hash chain dominates as $\delta$ becomes very large, the complexity changes to $\mathcal{O}(\frac{\delta}{b^{n}})$. % FIXME double check the math!
+	Jumps by an arbitrary interval require a little more calculation (Algorithm \ref{alg:jump}). The interval $\delta$ is componentized, and each digit incremented in ascending order. Every positional digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count. Arbitrary jumps run in $\mathcal{O}(\log_{b} \delta)$ when $\delta < b^{b(n+1)}$ (the normal operating interval that the skip ratchet is tuned for). As the unary hash chain dominates as $\delta$ becomes very large, the complexity becomes $\mathcal{O}(\frac{\delta}{b^{n}})$.
 
 	\begin{algorithm}
 		\caption{Skip Ratchet Arbitrary Jump}
@@ -464,31 +412,37 @@
 	
 	Encryption is a form of direct access control. Much like how a bearer token may grant access to some resource, knowing a key grants access to the cleartext. There is no inbuilt way to revoke this access once the key is compromised. Updates rely on forward secrecy for protection, and key rotation in the case where a breach becomes known. Algorithms like the Double Ratchet\cite{double-ratchet} have post-compromise security, where there key is automatically rotated as a matter of course. This necessarily requires trusting the other party.
 		
-	The Skip Ratchet has two security domains: the external key generation, and its internal state. The internal state is itself based on hierarchical hash chains to assure forward secrecy, even for those that have been given access to the KDF's internal state. Not only is the previous state not calculable, other metadata such as the number of steps is also hidden, even when the internal state is known.
+	The skip ratchet has two security domains: its external key generation, and its internal state. The internal state is itself based on hierarchical hash chains to assure forward secrecy, even for those that have been given access to the KDF's internal state. Not only is the previous state not calculable, other metadata such as the number of steps is also hidden, even when the internal state is known.
 	
-	A flexible amount of information may be shared with limited, passive post-compromise security. Revealing one OKM provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing the \textsf{XOR} of the unary digit and a nonzero number of positional elements gives (self-healing) access to the remaining number of updates in that epoch. Access to the entire internal state grants access from a point onwards, including potentially the initial state.
+	\subsection{Interval Bounding}
 	
-	The Skip Ratchet trades off post-compromise self-healing for permissionless key agreement between an unbounded and growable set of peers. If the secured communications are between exactly two parties, the Double Ratchet is typically a better choice due to its post-compromise security. Such a model could be added on top of a Skip Ratchet by placing it inside a Double Ratchet, distributing a freshly initialized SR to a list of trusted peers on every $i$ steps, or any other method of rotating the unary digit.
+	The novel construction of the skip ratchet permits for bounding further derivation to a fixed range. This is accomplished by only sharing a few of the lower positions, and only sharing the rest of te state as a flattened hash.
+	
+	Revealing one OKM provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing the \textsf{XOR} of the unary digit and a nonzero number of positional elements gives (self-healing) access to the remaining number of updates in that epoch. Access to the entire internal state grants access from a point onwards, including potentially the initial state.
+	
+	For example, in a $(4, 256, \textsf{SHA}3, \oplus)$ skip ratchet, sharing $\langle S, M, L \oplus U \rangle$ allows the recipient to move freely in the ``medium'' jump range, up to $i + 256^{3} - 1$. Keys can still be fully generated thanks to \textsf{XOR}'s associativity, but the recipient will need to ask for the next $L' \oplus U$ to continue.
+	
+	\subsection{Self Healing}
+	
+	The skip ratchet trades off general compromise self-healing (of the unary digit) for permissionless key agreement between an unbounded and growable set of peers. If the secured communications are between exactly two parties, the Double Ratchet is typically a better choice due to its post-compromise security. Such a model could be adapted to use a skip ratchet for decentralized key agreement over time. In essence, this involves distributing a freshly initialized skip ratchet to a list of trusted peers on every $i$ steps \cite{decentralized-key-agreement}, or any other method of rotating the unary digit.
 	
 	\section{Conclusion}
 	
-	This paper has presented the Skip Ratchet, an algorithm for key agreement for streams of encrypted data with unbounded and changing participants. Arbitrary forward search can be performed in $\mathcal{O}(\log_{b} \delta)$ time in the expected context, backwards access is always impossible, and counts cannot be inferred from the internal state.
-    
-    \newpage
+	This paper has presented the skip ratchet, an algorithm for decentralized key agreement on streams of encrypted data with unbounded and changing participants. Arbitrary forward search in the expected operating range can be performed in $\mathcal{O}(\log_{b} \delta)$ time, backwards access is impossible without the earlier internal state, and total counts can never be inferred from the internal state.
     
     \section{Acknowledgements}
     
-    The Skip Ratchet algorithm was developed at \href{https://fission.codes}{Fission Codes} to support work on the \href{https://github.com/fission-suite/webnative}{WebNative File System (WNFS)}. Many thanks to the Fission Codes team for providing the freedom to develop this algorithm.
+    The skip ratchet algorithm was developed at \href{https://fission.codes}{Fission Codes} to support work on the \href{https://github.com/fission-suite/webnative}{WebNative File System (WNFS)}. Many thanks to the Fission Codes team for providing the support and freedom to develop this algorithm.
     
     Thanks to \href{https://github.com/matheus23/}{Philipp Krüger} at Fission Codes for  feedback on the design, for writing the bulk of the TypeScript implementation\cite{ts-wnfs-ratchet}, and for his patience as various parts of the algorithm were tweaked while that code was already in-flight.
     
+    Many thanks to \href{https://github.com/QuinnWilton}{Quinn Wilton} at Fission Codes for her feedback on various drafts of this paper, research into the broader literature, and suggestions on intended audience.
+    
     Thanks to \href{https://github.com/b5/}{Brendan O'Brien} at \href{https://qri.io/}{Qri} for the {Go implementation}\cite{go-wnfs-ratchet}, and for many discussions on the best way to explain the concept.
     
-    Many thanks to \href{https://github.com/QuinnWilton}{Quinn Wilton} for her feedback on various drafts of this paper, suggestions, and insights from the broader literature.
+    Thanks to \href{https://github.com/dholms}{Daniel Holmgren} at \href{https://blueskyweb.xyz}{Bluesky} for his feedback on early versions of this algorithm.
     
-    Thanks to \href{https://github.com/dholms}{Daniel Holmgren} at \textbf{NOT YET PUBLIC} for his feedback on early versions of this algorithm.
-    
-    Thanks to \href{https://github.com/jbenet/}{Juan Benet} at \href{https://protocol.ai/}{Protocol Labs} for encouraging me to write a fuller description of the Skip Ratchet than what was available in the WebNative online documentation.
+    Thanks to \href{https://github.com/jbenet/}{Juan Benet} at \href{https://protocol.ai/}{Protocol Labs} for encouraging me to write a fuller description of the skip ratchet than what was available in the WebNative online documentation.
     
     \printbibliography[title={References}]
 \end{document}
