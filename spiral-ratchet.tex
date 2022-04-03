@@ -25,12 +25,6 @@
 \addbibresource{spiral-ratchet.bib}
 \date{\today\\v1.0.0}
 
-%%%%%%%%%
-% TODOs %
-%%%%%%%%%
-% Passive setting
-% self-healing -> Post comprimise security
-
 \begin{document}
     \maketitle
     
@@ -40,7 +34,7 @@
 
    	\section{Introduction}
    	
-	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, forward secrecy (FS), one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), and so on. This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system capable of efficiently making large leaps in hash count, while preserving forward secrecy in a passive setting.
+	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, forward secrecy (FS), one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), payment schemes \cite{multidimensional}, and so on. This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system capable of efficiently making large leaps in hash count, while preserving forward secrecy in a passive setting.
 
     \section{Motivation}
     
@@ -60,11 +54,7 @@
 
 	Unary is one of the simplest forms of expressing numbers. This system is very concrete: the number of symbols is equivalent to the number being represented. Two examples are tally marks and Peano numbers \cite{peano-wikipedia}.
 	
-	Replacing the successor function with a hash function $h$, one may represent unary counting in a structurally equivalent manner to Peano numbers. Importantly, this does not make reference to a concrete "zero" value; merely an interval from the input $x$. It is common to denote $n$ applications of a hash $h$ as $h^n(x)$. By convention, this paper will use $x$, $y$, and $z$ as independent initial values.
-	
-	While this method is very straightforward, it is neither space nor time efficient.
-	
-	TODO : similar to \cite{DBLP:journals/corr/abs-cs-0503060}
+	Replacing the successor function with a hash function $h$, one may represent unary counting in a structurally equivalent manner to Peano numbers. Importantly, this does not make reference to a concrete ``zero'' value; merely an interval from the input $x$\footnote{By convention, this paper will use $I$, $J$, and $K$ as independent fixed initial values, and $x$ as an arbitrary variable}. It is common to denote $n$ applications of a hash $h$ as $h^n(x)$. While this method is very straightforward, it is neither space nor time efficient.
 	
     \begin{figure}[h]
 		\centering
@@ -80,7 +70,7 @@
     
     \subsection{Positional Hashing}
     
-    A major advantage of positional numerals is the ability to express large jumps with minimal effort. In positional systems (such as the familiar binary, decimal, and hexadecimal) each position corresponds to some factor for the numeral at that position.\footnote{While most systems use exponential factors of a fixed base, there exist systems where there are no simple relationship between factors.}
+    A major advantage of positional numerals is the ability to express large jumps with minimal effort. In positional systems (such as the familiar binary, decimal, and hexadecimal) each position corresponds to some factor for the numeral at that position.\footnote{While most systems use fixed-base exponential factors, there exist systems where there is no common relationship between positions.}
     
     \begin{figure}[h]
        	\centering
@@ -92,9 +82,9 @@
     
     \begin{figure}[h]
        	\begin{flalign}
-       		h_{10}(i+0)   & \Rightarrow x \nonumber \\
-       		h_{10}(i+11)  & \Rightarrow \langle h(y), h(x) \rangle \nonumber \\
-       		h_{10}(i+582) & \Rightarrow \langle h^{5}(z), h^{8}(y), h^{2}(x) \rangle \nonumber 
+       		h_{10}(x+0)   & \Rightarrow I \nonumber \\
+       		h_{10}(x+11)  & \Rightarrow \langle h(J), h(I) \rangle \nonumber \\
+       		h_{10}(x+582) & \Rightarrow \langle h^{5}(K), h^{8}(J), h^{2}(I) \rangle \nonumber 
        	\end{flalign}
        	
        	\caption{Compound Hash}
@@ -105,9 +95,9 @@
     
 	\begin{figure}[h]
 		\begin{flalign}
-			h_{pos10, \oplus}(0)   & \Rightarrow x \nonumber \\
-			h_{pos10, \oplus}(11)  & \Rightarrow h(y) \oplus h(x) \nonumber \\
-			h_{pos10, \oplus}(582) & \Rightarrow h^{5}(z) \oplus h^{8}(y) \oplus h^{2}(x) \nonumber 
+			h_{pos10, \oplus}(0)   & \Rightarrow I \nonumber \\
+			h_{pos10, \oplus}(11)  & \Rightarrow h(J) \oplus h(I) \nonumber \\
+			h_{pos10, \oplus}(582) & \Rightarrow h^{5}(K) \oplus h^{8}(J) \oplus h^{2}(I) \nonumber 
 		\end{flalign}
 	
 		\caption{Compound Hash Key Derivation}
@@ -418,13 +408,13 @@
 	
 	The novel construction of the skip ratchet permits for bounding further derivation to a fixed range. This is accomplished by only sharing a few of the lower positions, and only sharing the rest of te state as a flattened hash.
 	
-	Revealing one OKM provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing the \textsf{XOR} of the unary digit and a nonzero number of positional elements gives (self-healing) access to the remaining number of updates in that epoch. Access to the entire internal state grants access from a point onwards, including potentially the initial state.
+	Revealing one OKM provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing the \textsf{XOR} of the unary digit and a nonzero number of positional elements gives (post-compromise) access to the remaining number of updates in that epoch. Access to the entire internal state grants access from a point onwards, including potentially the initial state.
 	
 	For example, in a $(4, 256, \textsf{SHA}3, \oplus)$ skip ratchet, sharing $\langle S, M, L \oplus U \rangle$ allows the recipient to move freely in the ``medium'' jump range, up to $i + 256^{3} - 1$. Keys can still be fully generated thanks to \textsf{XOR}'s associativity, but the recipient will need to ask for the next $L' \oplus U$ to continue.
 	
-	\subsection{Self Healing}
+	\subsection{Post-Compromise Security}
 	
-	The skip ratchet trades off general compromise self-healing (of the unary digit) for permissionless key agreement between an unbounded and growable set of peers. If the secured communications are between exactly two parties, the Double Ratchet is typically a better choice due to its post-compromise security. Such a model could be adapted to use a skip ratchet for decentralized key agreement over time. In essence, this involves distributing a freshly initialized skip ratchet to a list of trusted peers on every $i$ steps \cite{decentralized-key-agreement}, or any other method of rotating the unary digit.
+	The skip ratchet trades off general post-compromise self-healing (of the unary digit) for permissionless key agreement between an unbounded and growable set of peers. If the secured communications are between exactly two parties, the Double Ratchet is typically a better choice due to its post-compromise security. Such a model could be adapted to use a skip ratchet for decentralized key agreement over time. In essence, this involves distributing a freshly initialized skip ratchet to a list of trusted peers on every $i$ steps \cite{decentralized-key-agreement}, or any other method of rotating the unary digit.
 	
 	\section{Conclusion}
 	
