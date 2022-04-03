@@ -34,7 +34,7 @@
 
    	\section{Introduction}
    	
-	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, forward secrecy (FS), one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), payment schemes \cite{multidimensional}, and so on. This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system capable of efficiently making large leaps in hash count, while preserving forward secrecy in a passive setting.
+	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, forward secrecy (FS), one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), digital payment schemes \cite{multidimensional}, and so on. This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system capable of efficiently making large leaps in hash count, while preserving forward secrecy in a passive setting.
 
     \section{Motivation}
     
@@ -78,7 +78,7 @@
      \caption{Componentized Hexadecimal}
     \end{figure}
     
-    Just as positional numerals combine multiple numbers to represent a single sum, a KDF state can have multiple components that are combined to create a single symmetric key.
+    Just as positional numerals combine multiple numbers to represent a single sum, a KDF state can have multiple components that are combined to create a single symmetric key.\footnote{Different directions of this core idea include hash calendars \cite{distributed-hash-calendar}, and multidimensional hash chains (MDHC) \cite{multidimensional}}
     
     \begin{figure}[h]
        	\begin{flalign}
@@ -87,7 +87,7 @@
        		h_{10}(x+582) & \Rightarrow \langle h^{5}(K), h^{8}(J), h^{2}(I) \rangle \nonumber 
        	\end{flalign}
        	
-       	\caption{Compound Hash}
+       	\caption{Compound Hash State}
        	\label{fig:compound-hash}
     \end{figure}
     
