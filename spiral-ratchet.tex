@@ -54,7 +54,7 @@
     
 	\subsection{Unary Hashing}
 
-	Hash chains are structurally very similar to unary counting systems\footnote{Two examples are tally marks and Peano numbers \cite{peano-wikipedia}.}. Unary is very concrete: the symbol count is equivalent to the number being represented. Replacing the successor function with a hash function $h$, one may represent unary counting with hashes.\footnote{By convention, this paper will use $I$, $J$, and $K$ as independent fixed initial values, $x$ as an arbitrary variable, and $h$ for hashing} Importantly, this does not make reference to a concrete ``zero'' value; merely an interval from the input $x$.
+	Hash chains are structurally very similar to unary counting systems.\footnote{Two examples are tally marks and Peano numbers \cite{peano-wikipedia}.} Unary is very concrete: the symbol count is equivalent to the number being represented. Replacing the successor function with a hash function $h$, one may represent unary counting with hashes.\footnote{By convention, this paper will use $I$, $J$, and $K$ as independent fixed initial values, $x$ as an arbitrary variable, and $h$ for hashing} Importantly, this does not make reference to a concrete ``zero'' value; merely an interval from the input $x$.
 	
 	While this method is very straightforward, it is not time efficient. A unary digit is included in the skip ratchet for forward security reasons. However, the remaining digits are more efficient.
 	
