@@ -345,7 +345,7 @@
 
 	Jumps by an arbitrary interval require a little more calculation (Algorithm \ref{alg:jump}). The interval $\delta$ is componentized, and each digit incremented in ascending order. Every positional digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count. Arbitrary jumps run in $\mathcal{O}(\log_{b} \delta)$ when $\delta < b^{b(n+1)}$ (the normal operating interval that the skip ratchet is tuned for). As the unary hash chain dominates as $\delta$ becomes very large, the complexity becomes $\mathcal{O}(\frac{\delta}{b^{n}})$.
 
-	\begin{algorithm*}[b]
+	\begin{algorithm*}
 		\caption{Skip Ratchet Arbitrary Jump}
 		\label{alg:jump}
 		
