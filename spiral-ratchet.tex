@@ -1,7 +1,7 @@
 % !TeX document-id = {c74a84f4-c0b2-4978-a479-47211c753752}
 % !BIB TS-program = biber
 
-\documentclass{article}
+\documentclass[twocolumn]{article}
 
 \usepackage{algorithm}
 \usepackage{algpseudocode}
@@ -27,6 +27,8 @@
 
 \begin{document}
     \maketitle
+    
+%    \begin{multicols}{2}
     
    	\begin{abstract}\
    		Hash chains are a simple way to generate pseudorandom key material. However, they are inefficient in many situations, including when used as logical clocks, or for synchronizing the heads of a forward secret stream. This paper presents the ``skip ratchet'', a novel symmetric key derivation function that can be efficiently incremented by arbitrary intervals.
@@ -112,7 +114,7 @@
     
     While advancing the ratchet by arbitrary intervals is possible, the jump operation is not the same as adding arbitrary integers. Incrementing all but the lowest digit cascades down to the lower values, ``zeroing'' them out. Therefore, arbitrary jumps require a carry (Algorithm \ref{alg:jump}). This is structurally similar to deterministic skip lists \cite{deterministic-skip-lists} (Figure \ref{fig:skip-list}), but with each step pointing to a monotonically increasing value, rather than previous ones.\footnote{While the analogy to fingered DAGs such as skip lists in the name is apt, the skip ratchet is distinct from other DAG-structured hash constructions like the Merkle tree \cite{merkle-tree} or hash calendar \cite{distributed-hash-calendar}. A skip ratchet does not aggregate digests into a signature, but rather counts by iteratively hashing the same value repeatedly, in tiers.} \\
  
-	\begin{figure}[h]
+	\begin{figure*}[h]
 		\centering
 		
 		$\xymatrix{
@@ -129,9 +131,9 @@
 	
 		\caption{Deterministic Skip List}
 		\label{fig:skip-list}
-	\end{figure}
+	\end{figure*}
 
-	\begin{figure}[h]
+	\begin{figure*}[h]
 		\centering
 		
 		$\xymatrix{
@@ -153,7 +155,7 @@
 
 		\caption{Simplified Skip Ratchet}
 		\label{fig:compound-ratchet}
-	\end{figure}
+	\end{figure*}
 
 	Each digit is given a label and maximum value for all but the largest, which acts as a linear ``spine''. This largest element is analogous to an unbounded unary digit. The remaining elements are arranged positionally, and are bounded by their numerical base. Since the unary digit is a hard limit on the number of digits, it conceals information about the range of numbers that the current internal state represents. Any range within a fixed larger value is called an ``epoch'' (e.g. ``the 300s epoch'' or ``the $h^{42}(x)$ epoch'').\footnote{The term ``epoch'' is used here in the generic or Ethereum\cite{ethereum-yellowpaper} sense, and is a slightly different from some other ratchet constructions such as the Double Ratchet\cite{double-ratchet-modularization}.}
 	
@@ -172,8 +174,6 @@
 		\caption{Spiral With Leaps}
 		\label{fig:spiral-metaphor}
 	\end{figure}
-
-	\FloatBarrier
 	
 	\section{Skip Ratchet}
 	
@@ -181,14 +181,14 @@
 	
 	The skip ratchet's state is built from a unary digit $U$, a fixed number $n$ of positional digits, and their base $b$. The positional digits are bounded by the base, and so must track a natural number count. The unary digit explicitly does not track its count.
 	
-	\begin{figure}[h]
+	\begin{figure*}[h]
 		\centering
 		
 		$S : \langle \langle Count_{0}, Value_{0} \rangle, \langle Count_{1}, Value_{1} \rangle \ldots \langle Count_{n-1}, Value_{n-1} \rangle, U\rangle_{b}$
 		
 		\caption{Skip Ratchet Counter}
 		\label{fig:counter}
-	\end{figure}
+	\end{figure*}
 
 	Note that Figure \ref{fig:counter} is given as little-endian. The order of the state does not strictly matter, but it is convenient to associate the index of the state with the exponent for the base that the position represents.
 	
@@ -209,7 +209,7 @@
 	
 	Each positional value is generated from the \emph{binary complement ($\sim$) of the preimage} of its larger neighbour, in a recursive cascade starting with the unary digit (Algorithm \ref{alg:setup}). This protects the information needed to derive the current state, and thus prevents leaking all of the values in that range.
 		
-	\begin{algorithm}
+	\begin{algorithm*}
 		\begin{algorithmic}[1]
 			\Require $\langle n, b, k \rangle \in \mathbb{N}_{1}\times{\mathbb{N}_{1}\times{\mathbb{N}_{1}}}$
 			\State $seed \overset{\$}{\gets} \lbrace 0, 1 \rbrace^{k}$
@@ -227,7 +227,7 @@
 	
 		\caption{Skip Ratchet Initialization}
 		\label{alg:setup}
-	\end{algorithm}
+	\end{algorithm*}
 
 	The number of digits is configurable. These should be chosen to a balance jump control (the number of intervals that can be skipped by), and step-function performance. If the number of digits is large, increment on the unary element or higher digits will have require multiple hash operations in each zero cascade.
 	
@@ -239,7 +239,7 @@
 	
 	It is sometimes helpful to distinguish between a small and large skip, and so the terms ``skip'' and ``leap'' may be used for this purpose, despite them functioning identically but on different positions. The term ``increment'' (or ``inc'') is only used for the special case of the smallest movement (by one).
 	
-	\begin{figure}[h]
+	\begin{figure*}[h]
 		\centering
 		
 		$\xymatrix{
@@ -274,7 +274,7 @@
 		
 		\caption{Binary Skip Ratchet Operations}
 		\label{fig:sr-ops}
-	\end{figure}
+	\end{figure*}
 
 	Being a ratchet, it can never be ``unwound'' (there is no inverse or subtractive analogue). Access to earlier keys requires knowing an even earlier state, and moving forward to the desired state from there. This is important for break-in resistance and backwards secrecy (e.g sharing a document from a point in time but no earlier).
 
@@ -282,7 +282,7 @@
 
 	Generating output key material (OKM) from the ratchet state can be done in a myriad of ways. This paper will use the bitwise \textsf{XOR} function, as it is straightforward and efficient.
 
-	\begin{algorithm}
+	\begin{algorithm*}
 		\caption{Generating a Key}
 		\label{alg:toKey}
 
@@ -295,9 +295,9 @@
 				\State $\textbf{return}\ sum$
 			\EndFunction
 		\end{algorithmic}
-	\end{algorithm}
+	\end{algorithm*}
 
-	\FloatBarrier
+%	\FloatBarrier
 	
 	\subsubsection{Increment}
 	
@@ -305,7 +305,7 @@
 	
 	The special case of incrementing by one is the simplest way to demonstrate this (Algorithm \ref{alg:inc}). It functions by checking the lowest digit's counter, and if it's saturated, mark a carry and move to the next digit and recurse, bounded by the unary digit. Any carried digits are then re-zeroed by the preimage of their larger neighbour.
 	
-	\begin{algorithm}
+	\begin{algorithm*}
 		\caption{Incrementing a Skip Ratchet}
 		\label{alg:inc}
 
@@ -341,13 +341,13 @@
 				\State $ratchet$
 				\EndFunction
 		\end{algorithmic}
-	\end{algorithm}
+	\end{algorithm*}
 
 	\subsubsection{Arbitrary Jumps}
 
 	Jumps by an arbitrary interval require a little more calculation (Algorithm \ref{alg:jump}). The interval $\delta$ is componentized, and each digit incremented in ascending order. Every positional digit has an upper bound, so any remainder saved for the final step, where any zeroed digits are incremented to match the final count. Arbitrary jumps run in $\mathcal{O}(\log_{b} \delta)$ when $\delta < b^{b(n+1)}$ (the normal operating interval that the skip ratchet is tuned for). As the unary hash chain dominates as $\delta$ becomes very large, the complexity becomes $\mathcal{O}(\frac{\delta}{b^{n}})$.
 
-	\begin{algorithm}
+	\begin{algorithm*}
 		\caption{Skip Ratchet Arbitrary Jump}
 		\label{alg:jump}
 		
@@ -398,7 +398,7 @@
 				\State $\textbf{return}\ ratchet$
 			\EndFunction
 		\end{algorithmic}
-	\end{algorithm}
+	\end{algorithm*}
 
 	\section{Security}
 	
@@ -435,6 +435,6 @@
     Thanks to \href{https://github.com/dholms}{Daniel Holmgren} at \href{https://blueskyweb.xyz}{Bluesky} for his feedback on early versions of this algorithm.
     
     Thanks to \href{https://github.com/jbenet/}{Juan Benet} at \href{https://protocol.ai/}{Protocol Labs} for encouraging me to write a fuller description of the skip ratchet than what was available in the WebNative online documentation.
-    
+
     \printbibliography[title={References}]
 \end{document}
