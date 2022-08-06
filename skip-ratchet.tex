@@ -29,14 +29,14 @@
     \maketitle
     
    	\begin{abstract}
-  		Hash chains are a simple way to generate pseudorandom key material. However, they are inefficient in many situations, including when used as logical clocks, or for synchronizing the heads of a forward secret stream. This paper presents the ``skip ratchet'', a novel symmetric key derivation function that can be efficiently incremented by arbitrary intervals.
+  		Hash chains are a simple way to generate pseudorandom key material. However, they are inefficient in many situations, including when used as logical clocks, or for synchronizing the heads of a pseudorandom stream. This paper presents the ``skip ratchet'', a novel symmetric key derivation function that can be efficiently incremented by arbitrary intervals.
    	\end{abstract}
 
    	\section{Introduction}
    	
-	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, forward secrecy (FS), one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), digital payment schemes \cite{multidimensional}, and so on.
+	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, backward secrecy, one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), digital payment schemes \cite{multidimensional}, and so on.
 	
-	This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system suitable for symmetric key derivation, and capable of efficiently making large leaps in hash count while preserving forward secrecy in a passive setting.
+	This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system suitable for symmetric key derivation, and capable of efficiently making large leaps in hash count while preserving backward secrecy in a passive setting.
 
     \section{Motivation}
     
@@ -365,9 +365,9 @@
 
 	\section{Security}
 	
-	There is no inbuilt way to revoke this access once the key is compromised. Updates rely on forward secrecy for protection, and key rotation in the case where a breach becomes known. Algorithms like the Double Ratchet\cite{double-ratchet} have post-compromise security in a two-party semi-trusted setup, where there key is automatically rotated as a matter of course.
+	There is no inbuilt way to revoke this access once the key is compromised. Updates rely on backward secrecy for protection, and key rotation in the case where a breach becomes known. Algorithms like the Double Ratchet\cite{double-ratchet} have post-compromise security in a two-party semi-trusted setup, where there key is automatically rotated as a matter of course.
 		
-	The skip ratchet has two security domains: its external key generation, and its internal state. The internal state is itself based on hierarchical hash chains to assure forward secrecy, even for those that have been given access to the KDF's internal state. Not only is the previous state not calculable, other metadata such as the number of steps is also hidden, even when the internal state is known.
+	The skip ratchet has two security domains: its external key generation, and its internal state. The internal state is itself based on hierarchical hash chains to assure backwards secrecy, even for those that have been given access to the KDF's internal state. Not only is the previous state not calculable, other metadata such as the number of steps is also hidden, even when the internal state is known.
 	
 	\subsection{Sharing Bounded State}
 	
