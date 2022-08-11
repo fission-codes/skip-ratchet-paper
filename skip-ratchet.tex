@@ -29,20 +29,20 @@
     \maketitle
     
    	\begin{abstract}
-  		Hash chains are a simple way to generate pseudorandom key material. However, they are inefficient in many situations, including when used as logical clocks, or for synchronizing the heads of a pseudorandom stream. This paper presents the ``skip ratchet'', a novel symmetric key derivation function that can be efficiently incremented by arbitrary intervals.
+  		Hash chains are a simple way to generate pseudorandom data. However, they are inefficient in many situations, including when used as logical clocks, or for synchronizing the heads of a pseudorandom stream. This paper presents the ``skip ratchet'', a novel pseudorandom function that can be efficiently incremented by arbitrary intervals.
    	\end{abstract}
 
    	\section{Introduction}
    	
-	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, backward secrecy, one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), digital payment schemes \cite{multidimensional}, and so on.
+	Hash algorithms provide a way to generate pseudorandom data (PRF) from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, backward secrecy, one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), digital payment schemes \cite{multidimensional}, key derivation (KDF), and so on.
 	
 	This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system suitable for symmetric key derivation, and capable of efficiently making large leaps in hash count while preserving backward secrecy in a passive setting.
 
     \section{Motivation}
     
-    The intersection of private data and location-independent access control in open protocols is only beginning to be explored. Decentralization and trust minimization are increasingly important, but has many unsolved problems including how to secure changing data in an unknown and unstable topology. Not knowing the number or attributes of peers implies the use of passive security methods based directly on data rather than mediated by live processes.
+    The intersection of private data and location-independent access control in open protocols is only beginning to be explored. Decentralization, trust minimization, and non-interactive protocols are increasingly important, but have many unsolved problems including how to secure changing data in an unknown and unstable topology. Not knowing the number or attributes of peers implies the use of passive security methods based directly on data rather than mediated by live processes.
     
-    An increasing number of applications in open decentralized networks have no fixed topology, and require zero-interaction key agreement on a large number of files, the ability to share a single file (and no others), a range of files, or elements from a point in time onwards (but not prior versions). As such, there is also a need to keep the historical information of the internal state secret from even those with current access.
+    An increasing number of applications in open decentralized networks have no fixed topology, and require non-interactive key agreement on a large number of files, the ability to share a single file (and no others), a range of files, or elements from a point in time onwards (but not prior versions). As such, there is also a need to keep the historical information of the internal state secret from even those with current access.
     
     One approach for securing history is to use a simple ratchet function, iteratively hashing on each update to produce the next state (a "hash chain"). This works well if the number of changes to synchronize is small, but $\mathcal{O}(n)$ ratchet steps is prohibitive as the difference grows. It allows a malicious participant to force others to a large amount of work in order to access the latest update.
     
@@ -91,7 +91,7 @@
        	\label{fig:compound-hash}
     \end{figure}
     
-    Unlike a positional number system used in arithmetic, a KDF ``forgets'' its internal state, combining elements and flattening its structure. There are many methods of combination, including further hashing; this paper will use bitwise \textsf{XOR} (Figure \ref{fig:compound-kdf}).
+    Unlike a positional number system used in arithmetic, a KDF ``forgets'' its internal state, combining elements and flattening its structure. There are many methods of combination, including further hashing, concatenation followed by \textsf{HKDF}, and so on. This paper will use bitwise \textsf{XOR} (Figure \ref{fig:compound-kdf}).
     
 	\begin{figure}[h]
 		\begin{flalign}
@@ -168,11 +168,11 @@
 	
 	\subsection{Initialization}
 	
-	A skip ratchet is deterministically derived from a hash function $h$, a numeric base $b$, a positional digit count $n$, a function $k$ to derive a key from the state, and an initialization vector $IV$. We distinguish between configurations by referring to their $\langle n, b, h, k \rangle$ triple, such as $\langle 3, 256, \textsf{SHA}3, \oplus \rangle$ skip ratchet.\footnote{This implies that a $\langle 0, b, h, k \rangle$ skip ratchet would express a standard hash chain.}
+	A skip ratchet is deterministically derived from a hash function $h$, a numeric base $b$, a positional digit count $n$, a function $k$ to derive a key from the state, and an initialization vector $IV$. We distinguish between configurations by referring to their $\langle n, b, h, k \rangle$ triple, such as $\langle 3, 256, \textsf{HKDF}, \oplus \rangle$ skip ratchet.\footnote{This implies that a $\langle 0, b, h, k \rangle$ skip ratchet would express a standard hash chain.}
 	
 	To prevent leaking the iteration count, all of the positional values in the seed state are immediately incremented by a random value. This randomized origin is treated as the ratchet's starting state. Given the backward secrecy constraint, only relative values may be used unless this initial value is known.
 	
-	Each positional value is generated from the \emph{preimage's binary complement ($\sim$)} of its larger neighbour, in a recursive cascade starting with the unary digit (Algorithm \ref{alg:setup}). This protects the information needed to derive the current state, and thus prevents leaking all of the values in that range.
+	Each positional value is generated from the salt-concatenated ($\|$) preimage's hash of its larger neighbour, in a recursive cascade starting with the unary digit (Algorithm \ref{alg:setup}). This protects the information needed to derive the current state, and thus prevents leaking all of the values in that range. The salt must be consistent across all calls.
 		
 	\begin{algorithm*}
 		\begin{algorithmic}[1]
@@ -182,7 +182,7 @@
 			\State $pos   \coloneqq []$
 			\For{$i \in n \ldots 0$} \Comment{Descending to associate index with degree}
 				\State $\delta \overset{\$}{\gets} 0\ldots{b - 1}$ \Comment{To increment by}
-				\State $seed \coloneqq hash(\sim{seed})$ \Comment{Secretly derive from the larger value}
+				\State $seed \coloneqq hash(salt \| seed)$ \Comment{Secretly derive from the larger value}
 				\State $pos[i].count \coloneqq \delta$
 				\State $pos[i].value \coloneqq hash^{\delta + 1}(seed)$
 			\EndFor
@@ -196,7 +196,7 @@
 
 	The number of digits is configurable. These should be chosen to a balance jump control (the number of intervals that can be skipped by), and step-function performance. If the number of digits is large, increment on the unary element or higher digits will have require multiple hash operations in each zero cascade.
 	
-	In practice, $\langle 2, 256, \textsf{SHA}3, \oplus \rangle$ and $\langle 2, 256, \textsf{BLAKE}3, \oplus \rangle$ skip ratchets have performed well. The maximum leap is $256^{2}$, so the state $i + 256^{3}$ is (approximately) the same amount of work as $i + 256$. Given the small constant factor of hardware-accelerated hashing and the monotonicity of a ratchet, relatively large bases are often viable.
+	In practice, $\langle 2, 256, \textsf{SHA256}, \oplus \rangle$ and $\langle 2, 256, \textsf{BLAKE}3, \oplus \rangle$ skip ratchets have performed well. The maximum leap is $256^{2}$, so the state $i + 256^{3}$ is (approximately) the same amount of work as $i + 256$. Given the small constant factor of hardware-accelerated hashing and the monotonicity of a ratchet, relatively large bases are often viable.
 
 	\subsection{Basic Operations}
 	
@@ -296,7 +296,7 @@
 					\For{$j \in (counter - 1) \ldots 0$} \Comment{N.B. Descending}
 						\State $seed' \coloneqq pos[j].value$
 						\State $ratchet[pos][j].count \coloneqq 0$
-						\State $ratchet[pos][j].value \coloneqq hash(\sim{seed})$
+						\State $ratchet[pos][j].value \coloneqq hash(salt \| seed)$
 						\State $seed \coloneqq seed'$
 					\EndFor
 				\EndIf
@@ -354,7 +354,7 @@
 				\EndIf
 				\\
 				\For{$j \in (length(carry) - 1) \ldots 0$} \Comment{N.B. Descending}
-					\State $seed \coloneqq hash^{carry[j] - 1}(\sim{seed})$
+					\State $seed \coloneqq hash^{carry[j] - 1}(salt \| seed)$
 					\State $ratchet.pos[j].value \coloneqq hash(seed)$
 				\EndFor
 				\\
@@ -375,7 +375,7 @@
 	
 	Revealing one OKM provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing an \textsf{XOR} of the unary digit and a nonzero number of positional elements provides the remaining updates in that epoch. Access to the entire internal state grants provides keys from a point onwards, including potentially the initial state. The number of elements in the internals state must be at least $n+2$ to provide if intended for use in this setting, where $n$ is the number of levels that are desired to be exposed.
 	
-	For example, in a $\langle 3, 256, \textsf{SHA}3, \oplus \rangle$ skip ratchet, sharing $\langle S, M, L \oplus U \rangle$ allows the recipient to move freely in the ``medium'' jump range, up to $i + 256^{2} - 1$. Keys can still be fully generated thanks to \textsf{XOR}'s associativity, but the recipient will need to ask for the next $L' \oplus U$ to continue.
+	For example, in a $\langle 3, 256, \textsf{SHA256}, \oplus \rangle$ skip ratchet, sharing $\langle S, M, L \oplus U \rangle$ allows the recipient to move freely in the ``medium'' jump range, up to $i + 256^{2} - 1$. Keys can still be fully generated thanks to \textsf{XOR}'s associativity, but the recipient will need to ask for the next $L' \oplus U$ to continue.
 	
 	\subsection{Post-Compromise Security}
 	
@@ -394,6 +394,8 @@
     Many thanks to \href{https://github.com/QuinnWilton}{Quinn Wilton} at Fission Codes for her feedback on various drafts of this paper, research into the broader literature, and suggestions on intended audience.
     
     Thanks to \href{https://github.com/b5/}{Brendan O'Brien} at \href{https://n0.computer/}{Number Zero} for the {Go implementation}\cite{go-wnfs-ratchet}, and for many discussions on the best way to explain the concept.
+    
+    Thanks to \href{https://github.com/ramfox/}{Kasey Huizinga} at Number Zero and \href{https://github.com/appcypher/}{Stephen Akinyemi} at Fission Codes for their Rust implementation.
     
     Thanks to \href{https://github.com/dholms}{Daniel Holmgren} at \href{https://blueskyweb.xyz}{Bluesky} for his feedback on early versions of this algorithm.
     
