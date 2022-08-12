@@ -23,24 +23,24 @@
 \title{Skip Ratchet \\[1ex] \large A Hierarchical Hash System}
 \author{Brooklyn Zelenka \\ \href{https://fission.codes}{Fission Codes} \\ \href{mailto:brooklyn@fission.codes}{brooklyn@fission.codes} }
 \addbibresource{skip-ratchet.bib}
-\date{\today\\v1.0.1}
+\date{v1.0.0}
 
 \begin{document}
     \maketitle
     
    	\begin{abstract}
-  		Hash chains are a simple way to generate pseudorandom data. However, they are inefficient in many situations, including when used as logical clocks, or for synchronizing the heads of a pseudorandom stream. This paper presents the ``skip ratchet'', a novel pseudorandom function that can be efficiently incremented by arbitrary intervals.
+  		Hash chains are a simple way to generate pseudorandom data. However, they are inefficient in situations that require large chains. This can cause unnecessary overheads for use cases including logical clocks, synchronizing the heads of a pseudorandom stream, or non-interactive key agreement. This paper presents the ``skip ratchet'', a novel pseudorandom function that can be efficiently incremented by arbitrary intervals.
    	\end{abstract}
 
    	\section{Introduction}
    	
-	Hash algorithms provide a way to generate pseudorandom data (PRF) from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, backward secrecy, one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions (KDFs), digital payment schemes \cite{multidimensional}, key derivation (KDF), and so on.
+	Hash algorithms provide a way to generate pseudorandom data from an input that is impractical to reverse. Many applications iteratively hash a value (``ratcheting'' \cite{pond}) for pre-computation resistance, backward secrecy, one-time schemes (e.g. S/KEY \cite{rfc1760}), deterministically generating unique names, key derivation functions, digital payment schemes \cite{multidimensional}, and so on.
 	
-	This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system suitable for symmetric key derivation, and capable of efficiently making large leaps in hash count while preserving backward secrecy in a passive setting.
+	This paper introduces the ``skip ratchet'', a hierarchical and iterative hashing system suitable as an extension to pseudorandom (PRF) and key derivation (KDF) functions. A skip ratchet is capable of efficiently making large leaps in hash count while preserving backward secrecy in a passive setting.
 
     \section{Motivation}
     
-    The intersection of private data and location-independent access control in open protocols is only beginning to be explored. Decentralization, trust minimization, and non-interactive protocols are increasingly important, but have many unsolved problems including how to secure changing data in an unknown and unstable topology. Not knowing the number or attributes of peers implies the use of passive security methods based directly on data rather than mediated by live processes.
+    The intersection of private data and location-independent access control in open protocols is only beginning to be explored. Decentralization, trust minimization, and non-interactive protocols are increasingly important, but have many unsolved problems including how to efficiently secure changing data in an unknown and unstable topology. Not knowing the number or attributes of peers implies the use of passive security methods based directly on data rather than mediated by live processes.
     
     An increasing number of applications in open decentralized networks have no fixed topology, and require non-interactive key agreement on a large number of files, the ability to share a single file (and no others), a range of files, or elements from a point in time onwards (but not prior versions). As such, there is also a need to keep the historical information of the internal state secret from even those with current access.
     
@@ -50,11 +50,11 @@
     
     \section{Numeral Intuition}
     
-    The problem of how to efficiently calculate the $n^{\text{th}}$ step of a ratchet in less than $n$ steps is structurally similar to how we efficiently represent large numbers. There are many systems for doing so. The two most common are tally marks (unary) and positional numeral systems. The skip ratchet uses analogies to both of these concepts.
+    The problem of how to efficiently calculate the $n^{\text{th}}$ step of a ratchet in fewer than $n$ steps is structurally similar to how we efficiently represent large numbers. There are many systems for doing so. The two most common numeric representations are unary and positional numeral systems. The skip ratchet uses analogies to both of these concepts.
     
 	\subsection{Unary Hashing}
 
-	Hash chains are structurally very similar to unary counting systems.\footnote{Two examples are tally marks and Peano numbers \cite{peano-wikipedia}.} Unary is very concrete: the symbol count is equivalent to the number being represented. Replacing the successor function with a hash function $h$, one may represent unary counting with hashes.\footnote{By convention, this paper will use $I$, $J$, and $K$ as independent fixed initial values, $x$ as an arbitrary variable, and $h$ for hashing} As will become useful later, this does not make reference to a concrete ``zero'' value; merely an interval from the input $x$.
+	Hash chains are structurally very similar to unary counting systems. Unary is very concrete: the symbol count is equivalent to the number being represented. Two examples are tally marks and Peano numbers  \cite{peano-wikipedia}. Replacing the successor function with a hash function $h$, one may represent unary counting with hashes.\footnote{By convention, this paper will use $I$, $J$, and $K$ as independent fixed initial values, $x$ as an arbitrary variable, and $h$ for hashing} As will become useful later, this does not make reference to a concrete ``zero'' value; merely an interval from the input $x$.
 	
     \begin{figure}[h]
 		\centering
@@ -78,7 +78,7 @@
      \caption{Componentized Hexadecimal}
     \end{figure}
     
-    Just as positional numerals combine multiple numbers to represent a single sum, a KDF state can have multiple components that are combined to create a single symmetric key.\footnote{Different explorations of this core idea include hash calendars \cite{distributed-hash-calendar}, and multidimensional hash chains (MDHC) \cite{multidimensional}}
+    Just as positional numerals combine multiple numbers to represent a single sum, the hash count state can have multiple components that are combined to create a single symmetric key.\footnote{Different explorations of this core idea include hash calendars \cite{distributed-hash-calendar}, and multidimensional hash chains (MDHC) \cite{multidimensional}}
     
     \begin{figure}[h]
        	\begin{flalign}
@@ -91,7 +91,7 @@
        	\label{fig:compound-hash}
     \end{figure}
     
-    Unlike a positional number system used in arithmetic, a KDF ``forgets'' its internal state, combining elements and flattening its structure. There are many methods of combination, including further hashing, concatenation followed by \textsf{HKDF}, and so on. This paper will use bitwise \textsf{XOR} (Figure \ref{fig:compound-kdf}).
+    Unlike a positional number system used in arithmetic, a compound ratchet ``forgets'' its internal state, combining elements and flattening its structure. There are many methods of combination, including further hashing, concatenation followed by \textsf{HKDF}, and so on. This paper will use bitwise \textsf{XOR} (Figure \ref{fig:compound-kdf}).
     
 	\begin{figure}[h]
 		\begin{flalign}
@@ -168,11 +168,11 @@
 	
 	\subsection{Initialization}
 	
-	A skip ratchet is deterministically derived from a hash function $h$, a numeric base $b$, a positional digit count $n$, a function $k$ to derive a key from the state, and an initialization vector $IV$. We distinguish between configurations by referring to their $\langle n, b, h, k \rangle$ triple, such as $\langle 3, 256, \textsf{HKDF}, \oplus \rangle$ skip ratchet.\footnote{This implies that a $\langle 0, b, h, k \rangle$ skip ratchet would express a standard hash chain.}
+	A skip ratchet is deterministically derived from a hash function $h$, a numeric base $b$, a positional digit count $n$, a function $k$ to derive a key from the state, and an initialization vector $IV$. We distinguish between configurations by referring to their $\langle n, b, h, k \rangle$ triple, such as $\langle 3, 256, \textsf{SHA256}, \textsf{HKDF} \rangle$ skip ratchet.\footnote{This implies that a $\langle 0, b, h, k \rangle$ skip ratchet would express a standard hash chain.}
 	
 	To prevent leaking the iteration count, all of the positional values in the seed state are immediately incremented by a random value. This randomized origin is treated as the ratchet's starting state. Given the backward secrecy constraint, only relative values may be used unless this initial value is known.
 	
-	Each positional value is generated from the salt-concatenated ($\|$) preimage's hash of its larger neighbour, in a recursive cascade starting with the unary digit (Algorithm \ref{alg:setup}). This protects the information needed to derive the current state, and thus prevents leaking all of the values in that range. The salt must be consistent across all calls.
+	Each positional value is generated from the salt-concatenated ($x \| y$) preimage's hash of its larger neighbour, in a recursive cascade starting with the unary digit (Algorithm \ref{alg:setup}). This protects the information needed to derive the current state, and thus prevents leaking all of the values in that range. The salt must be consistent across all calls.
 		
 	\begin{algorithm*}
 		\begin{algorithmic}[1]
@@ -230,11 +230,11 @@
 					\ar[r]^{inc}
 				& \cdots
 			\\
-				& \text{Key}_{0}
-				& \text{Key}_{1}
-				& \text{Key}_{2}
-				& \text{Key}_{3}
-				& \text{Key}_{4}
+				& \text{Secret}_{0}
+				& \text{Secret}_{1}
+				& \text{Secret}_{2}
+				& \text{Secret}_{3}
+				& \text{Secret}_{4}
 		}$
 		
 		\caption{Binary Skip Ratchet Operations}
@@ -243,9 +243,9 @@
 
 	Being a ratchet, it can never be ``unwound'' (there is no inverse or subtractive analogue). Access to earlier keys requires knowing an even earlier state, and moving forward to the desired state from there. This is important for break-in resistance and backwards secrecy (e.g sharing a document from a point in time but no earlier).
 
-	\subsubsection{Key Derivation}
+	\subsubsection{Secret Derivation}
 
-	Generating output key material (OKM) from the ratchet state can be done in a myriad of ways. This paper will use the bitwise \textsf{XOR} function, as it is straightforward and efficient.
+	Generating secrets or keys from the ratchet state can be done in a myriad of ways. This paper will use the bitwise \textsf{XOR} function, as it is straightforward and efficient.
 
 	\begin{algorithm*}
 		\caption{Generating a Key}
@@ -365,15 +365,15 @@
 
 	\section{Security}
 	
-	There is no inbuilt way to revoke this access once the key is compromised. Updates rely on backward secrecy for protection, and key rotation in the case where a breach becomes known. Algorithms like the Double Ratchet\cite{double-ratchet} have post-compromise security in a two-party semi-trusted setup, where there key is automatically rotated as a matter of course.
+	There is no inbuilt way to revoke this access once a secret is compromised. This is especially important if a skip ratchet is used to generate cryptographic keys. Updates rely on backward secrecy for protection, and key rotation in the case where a breach becomes known. Algorithms such as the Double Ratchet\cite{double-ratchet} have post-compromise security in a two-party semi-trusted setup, where there key is automatically rotated as a matter of course.
 		
-	The skip ratchet has two security domains: its external key generation, and its internal state. The internal state is itself based on hierarchical hash chains to assure backwards secrecy, even for those that have been given access to the KDF's internal state. Not only is the previous state not calculable, other metadata such as the number of steps is also hidden, even when the internal state is known.
+	The skip ratchet has two security domains: its external secret generation, and its internal state. The state is itself based on hierarchical hash chains to assure backwards secrecy, even for those that have been given access to its state. Not only is the previous state not calculable, other metadata such as the number of steps is also hidden, even when the internal state is known.
 	
 	\subsection{Sharing Bounded State}
 	
 	The skip ratchet's internal state permits bounding derivation to a fixed range in a decentralized system. This is accomplished by only sharing some of the lower positions, with the rest being presented as a flattened hash.
 	
-	Revealing one OKM provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing an \textsf{XOR} of the unary digit and a nonzero number of positional elements provides the remaining updates in that epoch. Access to the entire internal state grants provides keys from a point onwards, including potentially the initial state. The number of elements in the internals state must be at least $n+2$ to provide if intended for use in this setting, where $n$ is the number of levels that are desired to be exposed.
+	Revealing one derived key provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing an \textsf{XOR} of the unary digit and a nonzero number of positional elements provides the remaining updates in that epoch. Access to the entire internal state grants provides keys from a point onwards, including potentially the initial state. The number of elements in the internals state must be at least $n+2$ to provide if intended for use in this setting, where $n$ is the number of levels that are desired to be exposed.
 	
 	For example, in a $\langle 3, 256, \textsf{SHA256}, \oplus \rangle$ skip ratchet, sharing $\langle S, M, L \oplus U \rangle$ allows the recipient to move freely in the ``medium'' jump range, up to $i + 256^{2} - 1$. Keys can still be fully generated thanks to \textsf{XOR}'s associativity, but the recipient will need to ask for the next $L' \oplus U$ to continue.
 	
@@ -381,9 +381,13 @@
 	
 	The skip ratchet trades off general post-compromise self-healing (of the unary digit) for permissionless key agreement between an unbounded and growable set of peers. If the secured communications are between exactly two parties, the Double Ratchet is typically a better choice due to its post-compromise security. Such a model could be adapted to use a skip ratchet for decentralized key agreement with periodic rotations of the unary digit. In essence, this involves distributing a freshly initialized skip ratchet to a list of trusted peers on every $i$ steps \cite{decentralized-key-agreement}, or any other method of rotating the unary digit.
 	
+	\subsection{Seed Trust}
+	
+	Giving a single party the power to decide the initial seed is not desirable in some situations. There are many options for generating this value from components provided by many parties. Some common options include \href{https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange}{Diffie-Hellman key exchange} and its variants (e.g. \href{https://www.signal.org/docs/specifications/x3dh/}{X3DH}) and \href{https://en.wikipedia.org/wiki/Key_ceremony}{key ceremonies}.
+	
 	\section{Conclusion}
 	
-	This paper has presented the skip ratchet, an algorithm for decentralized key agreement on streams of encrypted data with unbounded and changing participants. Arbitrary forward search in the expected operating range can be performed in $\mathcal{O}(\log_{b} \delta)$ time within a configurable bound (and $\mathcal{O}(\frac{\delta}{b^{n}})$ outside it), backwards access is impossible without the earlier internal state, and total counts can never be inferred from the internal state.
+	This paper has presented the skip ratchet, an algorithm for decentralized secrets and keys on streams of encrypted data with unbounded and changing participants. Arbitrary forward search in the expected operating range can be performed in $\mathcal{O}(\log_{b} \delta)$ time within a configurable bound (and $\mathcal{O}(\frac{\delta}{b^{n}})$ outside it), backwards access is impossible without the earlier internal state, and total counts can never be inferred from the internal state.
     
     \section{Acknowledgements}
     
