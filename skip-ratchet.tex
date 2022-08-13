@@ -70,7 +70,7 @@
     
     \subsection{Positional Hashing}
     
-    A major advantage of positional numerals is the ability to express large jumps with minimal effort. In positional systems (such as the familiar binary, decimal, and hexadecimal) each position corresponds to some factor for the numeral at that position.\footnote{While most systems use fixed-base exponential factors, there exist systems where there is no common relationship between positions.}
+    A major advantage of positional numerals is the ability to express large jumps with minimal effort. In positional systems (such as the familiar binary, decimal, and hexadecimal) each position corresponds to some factor for the numeral at that position.\footnote{While most systems use fixed-base exponential factors, there exist \href{https://en.wikipedia.org/wiki/Mixed_radix}{systems where there is no fixed relationship between positions}, or \href{https://en.wikipedia.org/wiki/Factorial_number_system}{some other rule relating them}.}
     
     \begin{figure}[h]
        	\centering
@@ -283,7 +283,7 @@
 					\If{$count < base - 1$} \Comment{Position not saturated}
 						\State $seed \coloneqq value$
 						\State $counter \coloneqq i$
-						\State $ratchet.pos[i].count \coloneqq count + 1$ \State $ratchet.pos[i].value \coloneqq hash(value)\}$
+						\State $ratchet.pos[i].count \coloneqq count + 1$ \State $ratchet.pos[i].value \coloneqq hash(value)$
 						\State \textbf{break}
 					\EndIf
 				\EndFor
@@ -373,7 +373,7 @@
 	
 	The skip ratchet's internal state permits bounding derivation to a fixed range in a decentralized system. This is accomplished by only sharing some of the lower positions, with the rest being presented as a flattened hash.
 	
-	Revealing one derived key provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing an \textsf{XOR} of the unary digit and a nonzero number of positional elements provides the remaining updates in that epoch. Access to the entire internal state grants provides keys from a point onwards, including potentially the initial state. The number of elements in the internals state must be at least $n+2$ to provide if intended for use in this setting, where $n$ is the number of levels that are desired to be exposed.
+	Revealing one derived key provides access to the cleartexts encrypted with that key (e.g. a single version of one file). Providing an \textsf{XOR} of the unary digit and a nonzero number of positional elements provides the remaining updates in that epoch. Access to the entire internal state grants provides keys from a point onwards, including potentially the initial state. The number of elements in the internal state must be at least $n+2$ if intended for use in this setting, where $n$ is the number of levels that are desired to be exposed.
 	
 	For example, in a $\langle 3, 256, \textsf{SHA256}, \oplus \rangle$ skip ratchet, sharing $\langle S, M, L \oplus U \rangle$ allows the recipient to move freely in the ``medium'' jump range, up to $i + 256^{2} - 1$. Keys can still be fully generated thanks to \textsf{XOR}'s associativity, but the recipient will need to ask for the next $L' \oplus U$ to continue.
 	
