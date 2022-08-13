@@ -283,7 +283,7 @@
 					\If{$count < base - 1$} \Comment{Position not saturated}
 						\State $seed \coloneqq value$
 						\State $counter \coloneqq i$
-						\State $ratchet.pos[i].count \coloneqq count + 1$ \State $ratchet.pos[i].value \coloneqq hash(value)\}$
+						\State $ratchet.pos[i].count \coloneqq count + 1$ \State $ratchet.pos[i].value \coloneqq hash(value)$
 						\State \textbf{break}
 					\EndIf
 				\EndFor
